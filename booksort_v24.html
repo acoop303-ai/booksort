@@ -978,18 +978,22 @@ function openDrawer(idx){
     var worstDate = b.bsWorstDate ? isoWeekToDate(b.bsWorstDate) : '';
     histBlock='<div class="dsec">12-MONTH HISTORY ('+b.bsWeeks+' wks · avg '+fmtP(b.bsWavg)+')</div>'+
       '<div style="border-radius:8px;overflow:hidden;margin-bottom:12px;border:1px solid var(--border)">'+
-        '<div style="display:flex;align-items:center;padding:9px 12px;background:rgba(74,232,158,0.06)'+(bestDate?';border-bottom:1px solid var(--border)':'')+'">'+
+        '<div style="display:flex;align-items:center;padding:9px 12px;background:rgba(74,232,158,0.06);border-bottom:1px solid var(--border)">'+
           '<span style="font-size:13px;margin-right:8px">📈</span>'+
           '<span style="flex:1;font-family:\'DM Mono\',monospace;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Best offer</span>'+
           '<span style="font-family:\'DM Mono\',monospace;font-size:15px;font-weight:700;color:var(--green)">'+fmtP(b.bsBestMax)+'</span>'+
         '</div>'+
-        (bestDate||b.bsBestV?'<div style="padding:3px 12px 7px;background:rgba(74,232,158,0.04);border-bottom:1px solid var(--border);font-size:10px;font-family:\'DM Mono\',monospace;color:var(--muted)">'+(b.bsBestV?b.bsBestV:'')+(b.bsBestV&&bestDate?' · ':'' )+(bestDate?'week of '+bestDate:'')+'</div>':'')+
-        '<div style="display:flex;align-items:center;padding:9px 12px;background:rgba(255,107,53,0.04)'+(worstDate||b.bsWorstV?';border-bottom:1px solid var(--border)':'')+'">'+
+        '<div style="padding:4px 12px 8px;background:rgba(74,232,158,0.04);border-bottom:1px solid var(--border);font-size:10px;font-family:\'DM Mono\',monospace;color:var(--muted)">'+
+          (b.bsBestV||bestDate ? (b.bsBestV||'—')+(bestDate?' · week of '+bestDate:'') : '— re-run pricer to populate')+
+        '</div>'+
+        '<div style="display:flex;align-items:center;padding:9px 12px;background:rgba(255,107,53,0.04);border-bottom:1px solid var(--border)">'+
           '<span style="font-size:13px;margin-right:8px">📉</span>'+
           '<span style="flex:1;font-family:\'DM Mono\',monospace;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Worst offer</span>'+
           '<span style="font-family:\'DM Mono\',monospace;font-size:15px;font-weight:700;color:var(--muted)">'+fmtP(b.bsWorstMax)+'</span>'+
         '</div>'+
-        (worstDate||b.bsWorstV?'<div style="padding:3px 12px 7px;background:rgba(255,107,53,0.03);font-size:10px;font-family:\'DM Mono\',monospace;color:var(--muted)">'+(b.bsWorstV?b.bsWorstV:'')+(b.bsWorstV&&worstDate?' · ':'')+(worstDate?'week of '+worstDate:'')+'</div>':'')+
+        '<div style="padding:4px 12px 8px;background:rgba(255,107,53,0.03);font-size:10px;font-family:\'DM Mono\',monospace;color:var(--muted)">'+
+          (b.bsWorstV||worstDate ? (b.bsWorstV||'—')+(worstDate?' · week of '+worstDate:'') : '— re-run pricer to populate')+
+        '</div>'+
       '</div>';
   } else if(sc==='NO DATA'||sc===''){
     histBlock='<div class="dsec">12-MONTH HISTORY</div><div style="font-size:11px;color:var(--muted);font-family:\'DM Mono\',monospace;margin-bottom:12px">No historical data found</div>';
@@ -1373,18 +1377,22 @@ function buildDrawerHTML(b){
     var worstDate = b.bsWorstDate ? isoWeekToDate(b.bsWorstDate) : '';
     histBlock='<div class="dsec">12-MONTH HISTORY ('+b.bsWeeks+' wks · avg '+fmtP(b.bsWavg)+')</div>'+
       '<div style="border-radius:8px;overflow:hidden;margin-bottom:12px;border:1px solid var(--border)">'+
-        '<div style="display:flex;align-items:center;padding:9px 12px;background:rgba(74,232,158,0.06)'+(bestDate?';border-bottom:1px solid var(--border)':'')+'">'+
+        '<div style="display:flex;align-items:center;padding:9px 12px;background:rgba(74,232,158,0.06);border-bottom:1px solid var(--border)">'+
           '<span style="font-size:13px;margin-right:8px">📈</span>'+
           '<span style="flex:1;font-family:\'DM Mono\',monospace;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Best offer</span>'+
           '<span style="font-family:\'DM Mono\',monospace;font-size:15px;font-weight:700;color:var(--green)">'+fmtP(b.bsBestMax)+'</span>'+
         '</div>'+
-        (bestDate||b.bsBestV?'<div style="padding:3px 12px 7px;background:rgba(74,232,158,0.04);border-bottom:1px solid var(--border);font-size:10px;font-family:\'DM Mono\',monospace;color:var(--muted)">'+(b.bsBestV?b.bsBestV:'')+(b.bsBestV&&bestDate?' · ':'' )+(bestDate?'week of '+bestDate:'')+'</div>':'')+
-        '<div style="display:flex;align-items:center;padding:9px 12px;background:rgba(255,107,53,0.04)'+(worstDate||b.bsWorstV?';border-bottom:1px solid var(--border)':'')+'">'+
+        '<div style="padding:4px 12px 8px;background:rgba(74,232,158,0.04);border-bottom:1px solid var(--border);font-size:10px;font-family:\'DM Mono\',monospace;color:var(--muted)">'+
+          (b.bsBestV||bestDate ? (b.bsBestV||'—')+(bestDate?' · week of '+bestDate:'') : '— re-run pricer to populate')+
+        '</div>'+
+        '<div style="display:flex;align-items:center;padding:9px 12px;background:rgba(255,107,53,0.04);border-bottom:1px solid var(--border)">'+
           '<span style="font-size:13px;margin-right:8px">📉</span>'+
           '<span style="flex:1;font-family:\'DM Mono\',monospace;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Worst offer</span>'+
           '<span style="font-family:\'DM Mono\',monospace;font-size:15px;font-weight:700;color:var(--muted)">'+fmtP(b.bsWorstMax)+'</span>'+
         '</div>'+
-        (worstDate||b.bsWorstV?'<div style="padding:3px 12px 7px;background:rgba(255,107,53,0.03);font-size:10px;font-family:\'DM Mono\',monospace;color:var(--muted)">'+(b.bsWorstV?b.bsWorstV:'')+(b.bsWorstV&&worstDate?' · ':'')+(worstDate?'week of '+worstDate:'')+'</div>':'')+
+        '<div style="padding:4px 12px 8px;background:rgba(255,107,53,0.03);font-size:10px;font-family:\'DM Mono\',monospace;color:var(--muted)">'+
+          (b.bsWorstV||worstDate ? (b.bsWorstV||'—')+(worstDate?' · week of '+worstDate:'') : '— re-run pricer to populate')+
+        '</div>'+
       '</div>';
   }
 
