@@ -1,0 +1,2105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>BookSort v29</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#0F0F0F;--s1:#1A1A1A;--s2:#242424;--s3:#2E2E2E;
+  --text:#F0EDE8;--muted:#777;--border:#2E2E2E;
+  --accent:#FF6B35;--green:#4AE89E;--blue:#4A9EE8;--yellow:#E8C44A;--purple:#B47AE8;--red:#E87A7A;
+  --booksrun:#4A9EE8;--worldbooks:#4AE89E;--thriftbooks:#B47AE8;
+  --powells:#E87A7A;--booktocash:#E8C44A;--ecampus:#80FF80;
+  --topdollar:#80FFCC;--bluerocket:#7AB8E8;--campusbear:#E8A84A;
+  --ebay:#FF6B35;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Syne',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;flex-direction:column}
+
+/* ── PICK SCREEN ── */
+#pick-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:28px 20px;text-align:center}
+.logo-big{font-size:36px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}
+.logo-big span{color:var(--accent)}
+.logo-sub{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:24px}
+.offline-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(74,232,158,0.12);border:1px solid rgba(74,232,158,0.3);border-radius:20px;padding:3px 10px;font-size:10px;font-family:'DM Mono',monospace;color:var(--green);margin-bottom:20px}
+.offline-dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
+.pick-label{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:8px;text-align:left;width:100%;max-width:420px;letter-spacing:1px;text-transform:uppercase}
+.haul-list{width:100%;max-width:420px;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px;max-height:38vh;overflow-y:auto}
+.haul-item{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s;position:relative}
+.haul-item:last-child{border-bottom:none}
+.haul-item:active,.haul-item:hover{background:var(--s1)}
+.haul-name{font-size:14px;font-weight:700;flex:1;text-align:left}
+.haul-meta{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
+.haul-meta b{color:var(--accent)}
+.haul-arrow{color:var(--muted);margin-left:8px}
+.haul-del{background:none;border:none;color:var(--red);font-size:16px;cursor:pointer;padding:0 0 0 10px;line-height:1;opacity:0.6}
+.haul-del:active{opacity:1}
+.msg{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);padding:20px;text-align:center}
+.err{color:#FF6060}
+.divider-or{width:100%;max-width:420px;display:flex;align-items:center;gap:10px;margin:4px 0 14px;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)}
+.divider-or::before,.divider-or::after{content:'';flex:1;height:1px;background:var(--border)}
+.drop-zone{width:100%;max-width:420px;border:1.5px dashed var(--border);border-radius:10px;padding:20px;cursor:pointer;background:var(--s1);position:relative;transition:border-color 0.15s}
+.drop-zone:hover,.drop-zone.over{border-color:var(--accent)}
+.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-title{font-size:14px;font-weight:700;margin-bottom:3px}
+.drop-sub{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace}
+.cache-info{width:100%;max-width:420px;margin-top:10px;font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;text-align:center}
+.cache-info b{color:var(--accent)}
+
+/* ── APP ── */
+#app{display:none;flex-direction:column;height:100%}
+.hdr{background:var(--bg);border-bottom:1px solid var(--border);flex-shrink:0}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;padding:11px 16px 0}
+.logo{font-size:19px;font-weight:800;letter-spacing:-0.5px}
+.logo span{color:var(--accent)}
+.hdr-stats{display:flex;gap:12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
+.hdr-stats b{color:var(--text)}
+.back-btn{background:none;border:none;color:var(--muted);font-size:12px;font-family:'Syne',sans-serif;font-weight:700;cursor:pointer;padding:0}
+.app-tabs{display:flex;background:var(--bg)}
+.app-tab{flex:1;padding:9px 4px;text-align:center;font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;letter-spacing:0.5px}
+.app-tab.active{color:var(--text);border-bottom-color:var(--accent)}
+.scans-ctrl{flex-shrink:0}
+.search-wrap{position:relative;padding:9px 16px 0}
+.search-wrap input{width:100%;background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:8px 32px 8px 12px;color:var(--text);font-family:'Syne',sans-serif;font-size:13px;outline:none;transition:border-color 0.15s}
+.search-wrap input:focus{border-color:var(--accent)}
+.search-wrap input::placeholder{color:var(--muted)}
+.srch-icon{position:absolute;right:26px;top:50%;transform:translateY(-25%);color:var(--muted);pointer-events:none;font-size:14px}
+.filters{display:flex;gap:5px;overflow-x:auto;padding:7px 16px;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.pill{flex-shrink:0;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:transparent;color:var(--muted);white-space:nowrap;font-family:'Syne',sans-serif;transition:all 0.12s}
+.pill.active{border-color:transparent;color:#000}
+.pill[data-v="ALL"].active{background:var(--accent);color:#fff}
+.pill[data-v="DIRECT BUYBACK"].active{background:var(--green);color:#000}
+.pill[data-v="LIST EBAY"].active{background:var(--yellow);color:#000}
+.pill[data-v="VENDOR BUNDLE"].active{background:#FF9944;color:#000}
+.pill[data-v="SKIP"].active{background:var(--red);color:#fff}
+.pill[data-v="NO OFFER"].active{background:#333;color:var(--muted);border-color:#555}
+.sort-bar{display:flex;align-items:center;padding:5px 16px 7px;font-size:11px;color:var(--muted)}
+.sort-bar span{font-family:'DM Mono',monospace}
+.sort-btns{margin-left:auto;display:flex;gap:4px}
+.sort-btns button{background:var(--s1);border:1px solid var(--border);color:var(--muted);font-size:11px;font-family:'Syne',sans-serif;font-weight:600;padding:3px 9px;border-radius:5px;cursor:pointer}
+.sort-btns button.active{background:var(--s2);color:var(--text);border-color:#555}
+.pages{flex:1;overflow:hidden;position:relative}
+.page{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none}
+.page.active{display:block}
+
+/* ── BOOK CARDS ── */
+.book-card{display:flex;gap:11px;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;align-items:flex-start}
+.book-card:active{background:var(--s1)}
+.cover{flex-shrink:0;width:46px;height:62px;border-radius:4px;overflow:hidden;background:var(--s2)}
+.cover img{width:100%;height:100%;object-fit:cover;display:block}
+.cover-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:18px}
+.binfo{flex:1;min-width:0}
+.btitle{font-size:13px;font-weight:700;line-height:1.3;margin-bottom:1px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.bauthor{font-size:10px;color:var(--muted);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'DM Mono',monospace}
+.bmeta{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.vbadge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap}
+.score-badge-sm{font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;font-family:'DM Mono',monospace}
+.offer{font-family:'DM Mono',monospace;font-size:14px;font-weight:500}
+.offer.zero{color:var(--muted);font-size:11px}
+.amz{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)}
+.tb-tag{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(180,122,232,0.15);color:var(--thriftbooks);font-family:'DM Mono',monospace}
+.rdot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0}
+.rh{background:#FF4444}.rm{background:#FFA500}.rs{background:#888}.rc{background:#444}
+.letter-div{padding:4px 16px;font-size:10px;font-weight:700;color:var(--muted);background:var(--s1);font-family:'DM Mono',monospace;letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.empty{padding:60px 20px;text-align:center;color:var(--muted);font-size:13px;line-height:1.8}
+.copy-isbn-bar{padding:8px 16px;border-top:1px solid var(--border)}
+.copy-isbn-btn{width:100%;padding:10px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Syne',sans-serif;font-weight:700;font-size:12px;cursor:pointer;transition:background 0.15s}
+.copy-isbn-btn:active,.copy-isbn-btn.copied{background:var(--green);color:#000}
+
+/* ── Badge colors — bright bordered pills ── */
+.vbadge{border:1px solid transparent}
+.b-direct    {background:rgba(74,232,158,.18);color:#5AFFA8;border-color:rgba(74,232,158,.45)}
+.b-ebay      {background:rgba(232,196,74,.18); color:#F0CC55;border-color:rgba(232,196,74,.45)}
+.b-borderline{background:rgba(232,140,50,.18); color:#FFAA55;border-color:rgba(232,140,50,.45)}
+.b-vendor    {background:rgba(255,107,53,.18); color:#FF8866;border-color:rgba(255,107,53,.45)}
+.b-abebook   {background:rgba(74,158,232,.18); color:#66BBFF;border-color:rgba(74,158,232,.45)}
+.b-skip      {background:rgba(232,80,80,.15);  color:#FF7777;border-color:rgba(232,80,80,.40)}
+.b-default   {background:var(--s2);color:var(--muted);border-color:var(--border)}
+
+/* ── OVERLAY + DRAWER ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;opacity:0;pointer-events:none;transition:opacity .25s}
+.overlay.open{opacity:1;pointer-events:auto}
+.drawer{position:fixed;bottom:0;left:0;right:0;background:var(--s1);border-radius:20px 20px 0 0;z-index:201;padding:18px 18px 44px;transform:translateY(100%);transition:transform .25s cubic-bezier(.32,.72,0,1);max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.drawer.open{transform:translateY(0)}
+.dhandle{width:36px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 14px}
+.dcov{width:72px;height:96px;border-radius:6px;overflow:hidden;background:var(--s2);margin:0 auto 12px;flex-shrink:0}
+.dcov img{width:100%;height:100%;object-fit:cover}
+.dtitle{font-size:16px;font-weight:800;line-height:1.3;margin-bottom:3px;text-align:center}
+.dauthor{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:14px;text-align:center}
+
+/* Score + trend row */
+.score-row{display:flex;gap:8px;justify-content:center;margin-bottom:16px;flex-wrap:wrap}
+.score-big{font-size:13px;font-weight:800;padding:5px 14px;border-radius:6px;font-family:'DM Mono',monospace;letter-spacing:0.5px}
+.score-STRONG{background:rgba(74,232,158,0.15);color:var(--green);border:1px solid rgba(74,232,158,0.35)}
+.score-GOOD{background:rgba(74,158,232,0.15);color:var(--blue);border:1px solid rgba(74,158,232,0.35)}
+.score-MAYBE{background:rgba(232,196,74,0.15);color:var(--yellow);border:1px solid rgba(232,196,74,0.35)}
+.score-PASS{background:rgba(120,120,120,0.12);color:var(--muted);border:1px solid var(--border)}
+.score-NODATA{background:var(--s2);color:var(--muted);border:1px solid var(--border)}
+.trend-chip{font-size:11px;font-weight:700;padding:5px 12px;border-radius:6px;font-family:'DM Mono',monospace}
+.trend-RISING{background:rgba(74,232,158,0.1);color:var(--green)}
+.trend-FALLING{background:rgba(232,122,122,0.1);color:var(--red)}
+.trend-STABLE{background:rgba(120,120,120,0.1);color:var(--muted)}
+.trend-VOLATILE{background:rgba(232,196,74,0.1);color:var(--yellow)}
+
+/* Stat grid for history */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border-radius:8px;overflow:hidden;margin-bottom:12px}
+.stat-cell{background:var(--s2);padding:10px;text-align:center}
+.stat-val{font-family:'DM Mono',monospace;font-size:15px;font-weight:500;margin-bottom:2px}
+.stat-lbl{font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+
+/* Vendor ranking */
+.vr-list{border-radius:8px;overflow:hidden;margin-bottom:12px}
+.vr-row{display:flex;align-items:center;padding:9px 12px;background:var(--s2);border-bottom:1px solid var(--border)}
+.vr-row:last-child{border-bottom:none}
+.vr-rank{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);width:20px;flex-shrink:0}
+.vr-name{flex:1;font-size:12px;font-weight:700}
+.vr-price{font-family:'DM Mono',monospace;font-size:14px;color:var(--green);font-weight:500}
+.vr-more{padding:8px 12px;background:var(--s2);font-size:11px;color:var(--muted);font-family:'DM Mono',monospace}
+
+/* 3-col stat blocks */
+.stat3{display:flex;gap:0;border-radius:8px;overflow:hidden;margin-bottom:12px}
+.stat3-cell{flex:1;background:var(--s2);padding:9px 6px;text-align:center;border-right:1px solid var(--border)}
+.stat3-cell:last-child{border-right:none}
+.stat3-val{font-family:'DM Mono',monospace;font-size:13px;margin-bottom:2px}
+.stat3-lbl{font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase}
+
+/* Drawer rows */
+.dsec{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:14px 0 6px}
+.drow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)}
+.dlabel{font-size:12px;color:var(--muted)}
+.dval{font-family:'DM Mono',monospace;font-size:13px}
+.isbn-chip{font-family:'DM Mono',monospace;font-size:11px;background:var(--s2);padding:3px 8px;border-radius:4px;border:1px solid var(--border)}
+
+/* Actions */
+.daction{width:100%;margin-top:14px;padding:14px;border-radius:10px;text-align:center;font-weight:800;font-size:14px;cursor:pointer;border:none;line-height:1.3}
+.da-direct{background:rgba(74,232,158,0.15);color:var(--green);border:1px solid rgba(74,232,158,0.3)}
+.da-ebay{background:rgba(255,107,53,0.15);color:var(--ebay);border:1px solid rgba(255,107,53,0.3)}
+.da-vendor{background:rgba(232,196,74,0.12);color:var(--yellow);border:1px solid rgba(232,196,74,0.25)}
+.da-donate{background:var(--s2);color:var(--muted);border:1px solid var(--border)}
+
+/* Status buttons */
+.status-btn{padding:5px 10px;border-radius:5px;border:1px solid var(--border);background:var(--s2);color:var(--muted);font-size:11px;font-family:'Syne',sans-serif;font-weight:600;cursor:pointer;margin:0 4px 6px 0}
+.active-status{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* eBay link */
+.ebay-link{display:block;margin-top:8px;padding:10px 14px;border-radius:8px;background:var(--s2);border:1px solid var(--border);text-align:center;font-size:12px;font-weight:700;color:var(--text);text-decoration:none}
+
+/* spinner */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+
+/* live poll indicator */
+@keyframes livepulse{0%,100%{opacity:1}50%{opacity:.3}}
+.live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:4px;animation:livepulse 1.5s ease infinite;vertical-align:middle}
+.poll-bar{display:flex;align-items:center;padding:5px 16px;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);gap:5px;border-bottom:1px solid var(--border);background:var(--s1)}
+.poll-bar.hidden{display:none}
+
+/* ── SHEET LOAD ── */
+.sheet-load-row{display:flex;gap:8px;width:100%;max-width:420px;margin-bottom:6px}
+.sheet-load-row input{flex:1;background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;outline:none;min-width:0}
+.sheet-load-row input:focus{border-color:var(--accent)}
+.sheet-load-row input::placeholder{color:var(--muted)}
+.sheet-load-btn{flex-shrink:0;background:var(--accent);border:none;border-radius:8px;padding:9px 16px;color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap}
+.sheet-load-btn:disabled{opacity:0.5;cursor:default}
+.sheet-status{width:100%;max-width:420px;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:8px;min-height:16px;text-align:center}
+.sheet-status.ok{color:var(--green)}.sheet-status.err{color:var(--red)}
+
+/* ── FAB (scan / add book button) ── */
+.fab{position:fixed;bottom:24px;right:16px;height:52px;padding:0 18px;border-radius:26px;background:var(--accent);border:none;color:#fff;font-size:13px;font-weight:800;font-family:'Syne',sans-serif;cursor:pointer;z-index:100;box-shadow:0 4px 20px rgba(255,107,53,.45);display:none;align-items:center;gap:7px;white-space:nowrap;letter-spacing:.3px}
+.fab.visible{display:flex}
+.fab:active{transform:scale(.96)}
+.fab-icon{font-size:18px;line-height:1}
+
+/* ── ADD BOOK MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:300;display:none;align-items:flex-end}
+.modal-overlay.open{display:flex}
+.modal{background:var(--s1);border-radius:20px 20px 0 0;padding:22px 18px 44px;width:100%;max-height:80vh;overflow-y:auto}
+.modal-handle{width:36px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 18px}
+.modal-title{font-size:16px;font-weight:800;margin-bottom:14px}
+.isbn-row{display:flex;gap:8px;margin-bottom:12px}
+.isbn-input{flex:1;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--text);font-family:'DM Mono',monospace;font-size:15px;outline:none;letter-spacing:1px}
+.isbn-input:focus{border-color:var(--accent)}
+.isbn-input::placeholder{color:var(--muted);letter-spacing:0}
+.lookup-btn{background:var(--accent);border:none;border-radius:8px;padding:11px 18px;color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap}
+.lookup-btn:disabled{opacity:0.5}
+.modal-hint{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:16px}
+#lookup-result{min-height:40px}
+.lresult-card{background:var(--s2);border-radius:10px;padding:14px;margin-bottom:12px;border:1px solid var(--border)}
+.lresult-title{font-size:14px;font-weight:700;margin-bottom:4px}
+.lresult-sub{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:10px}
+.lresult-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+.lg-cell{background:var(--s1);border-radius:6px;padding:8px;text-align:center}
+.lg-val{font-family:'DM Mono',monospace;font-size:13px;margin-bottom:1px}
+.lg-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+.add-haul-btn{width:100%;padding:13px;border-radius:8px;background:var(--green);border:none;color:#000;font-family:'Syne',sans-serif;font-weight:800;font-size:14px;cursor:pointer}
+.add-haul-btn:active{opacity:.85}
+.no-script-warn{font-size:11px;color:var(--yellow);font-family:'DM Mono',monospace;padding:10px;background:rgba(232,196,74,0.08);border-radius:6px;border:1px solid rgba(232,196,74,0.2);margin-bottom:10px;line-height:1.5}
+.cam-btn{flex-shrink:0;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:0 12px;font-size:18px;cursor:pointer;line-height:1}
+.cam-btn.active{background:rgba(255,107,53,0.15);border-color:var(--accent)}
+</style>
+</head>
+<body>
+
+<!-- ── PICK SCREEN ── -->
+<div id="pick-screen">
+  <div class="logo-big">Book<span>Sort</span></div>
+  <div class="logo-sub">v21 — booksrun pricing</div>
+  <div class="offline-badge"><div class="offline-dot"></div>saved hauls load instantly</div>
+
+  <div id="today-pick-wrap" style="display:none;width:100%;max-width:420px"></div>
+
+  <!-- New scanning session button -->
+  <button onclick="createNewHaul()" style="width:100%;max-width:420px;margin-bottom:14px;padding:14px;border-radius:10px;background:var(--accent);border:none;color:#fff;font-family:'Syne',sans-serif;font-weight:800;font-size:15px;cursor:pointer;letter-spacing:.3px;box-shadow:0 4px 18px rgba(255,107,53,.35)">📷 Start New Scanning Session</button>
+
+  <div class="pick-label">SAVED SESSIONS &amp; HAULS</div>
+  <div class="haul-list" id="haul-list"><div class="msg">No saved hauls yet</div></div>
+  <div class="cache-info" id="cache-info"></div>
+
+  <div class="divider-or">or pull from google sheet</div>
+  <div class="pick-label">APPS SCRIPT WEB APP URL</div>
+  <div class="sheet-load-row">
+    <input id="sheet-url" type="url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" autocorrect="off" spellcheck="false">
+    <button class="sheet-load-btn" id="sheet-load-btn" onclick="loadFromSheet()">Load</button>
+  </div>
+  <div class="sheet-status" id="sheet-status"></div>
+
+  <div class="divider-or">or upload file</div>
+  <div class="drop-zone" id="dz">
+    <input type="file" id="fi" accept=".csv,.xlsx,.html,.htm">
+    <div class="drop-title">Drop CSV / XLSX / ThriftBooks HTML</div>
+    <div class="drop-sub">or tap to browse · hauls save for offline use</div>
+  </div>
+</div>
+
+<!-- ── APP ── -->
+<div id="app">
+  <div class="hdr">
+    <div class="hdr-top">
+      <div class="logo">Book<span>Sort</span></div>
+      <div class="hdr-stats"><span><b id="vc">0</b> shown</span><span><b id="vv">$0</b></span></div>
+      <button class="back-btn" onclick="goBack()">← Back</button>
+    </div>
+    <div class="app-tabs">
+      <div class="app-tab active" onclick="switchTab('scans',this)">SCANS</div>
+      <div class="app-tab" onclick="switchTab('today',this)" id="today-tab-label">📅 TODAY</div>
+      <div class="app-tab" onclick="switchTab('actions',this)">TOOLS</div>
+    </div>
+  </div>
+
+  <div id="scans-ctrl" class="scans-ctrl">
+    <div class="search-wrap">
+      <input id="search" type="text" placeholder="Search title, author, ISBN…">
+      <span class="srch-icon">🔍</span>
+    </div>
+    <div class="filters" id="filters"></div>
+    <div class="sort-bar">
+      <span id="rl">0 books</span>
+      <div class="sort-btns">
+        <button class="active" onclick="setSort('alpha',this)">A–Z</button>
+        <button onclick="setSort('offer',this)">$ ↓</button>
+        <button onclick="setSort('rank',this)">Rank</button>
+      </div>
+    </div>
+    <div class="copy-isbn-bar">
+      <button class="copy-isbn-btn" id="copy-isbn-btn" onclick="copyISBNs()">Copy All ISBNs for ThriftBooks</button>
+    </div>
+  </div>
+
+  <div class="poll-bar hidden" id="poll-bar">
+    <span class="live-dot"></span>
+    <span id="poll-status">Live · checking for QR Robot scans…</span>
+  </div>
+
+  <div class="pages">
+    <div class="page active" id="page-scans"><div id="book-list"></div></div>
+    <div class="page" id="page-today">
+      <div class="sort-bar" style="border-bottom:1px solid var(--border);flex-shrink:0">
+        <span id="today-count" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">0 scanned</span>
+        <div class="sort-btns">
+          <button class="active" id="tsort-new" onclick="setTodaySort('new',this)">Newest</button>
+          <button id="tsort-val" onclick="setTodaySort('val',this)">$ ↓</button>
+          <button id="tsort-call" onclick="setTodaySort('call',this)">Action</button>
+        </div>
+      </div>
+      <div id="today-list"></div>
+    </div>
+    <div class="page" id="page-actions"><div id="action-grid" style="padding:16px"></div></div>
+  </div>
+</div>
+
+<!-- ── OVERLAY + DRAWER ── -->
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer"><div class="dhandle"></div><div id="dc"></div></div>
+
+<!-- ── FAB ── -->
+<button class="fab" id="fab" onclick="openAddModal()"><span class="fab-icon">📷</span> SCAN / ADD</button>
+
+<!-- ── ADD BOOK MODAL ── -->
+<div class="modal-overlay" id="add-modal" onclick="if(event.target===this)closeAddModal()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Look Up a Book</div>
+    <div class="isbn-row">
+      <input class="isbn-input" id="add-isbn" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Scan or type ISBN…" maxlength="14" oninput="this.value=this.value.replace(/\D/g,'')">
+      <button class="cam-btn" id="cam-btn" onclick="toggleCamera()" title="Scan with camera">📷</button>
+      <button class="cam-btn" id="paste-btn" onclick="pasteISBN()" title="Paste ISBN" style="background:var(--s2);border-color:var(--border);color:var(--text);font-size:14px">📋</button>
+      <button class="lookup-btn" id="lookup-btn" onclick="lookupISBN()">Go</button>
+    </div>
+    <!-- Live viewfinder -->
+    <div id="cam-view" style="display:none;margin-bottom:12px;position:relative;border-radius:10px;overflow:hidden;background:#000">
+      <video id="cam-video" autoplay playsinline muted style="width:100%;max-height:220px;object-fit:cover;display:block"></video>
+      <!-- torch button -->
+      <button id="torch-btn" onclick="toggleTorch()" style="display:none;position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.55);border:1px solid rgba(255,255,255,0.25);border-radius:8px;color:#fff;font-size:18px;padding:5px 9px;cursor:pointer;z-index:10">🔦</button>
+      <!-- targeting box -->
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
+        <div style="width:80%;height:70px;border:2px solid rgba(255,107,53,0.9);border-radius:6px;box-shadow:0 0 0 9999px rgba(0,0,0,0.45)"></div>
+      </div>
+      <div id="cam-status" style="position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:11px;font-family:'DM Mono',monospace;color:rgba(255,255,255,0.8)">Point barcode inside the box</div>
+    </div>
+    <!-- Hidden file input fallback — works on file:// when no HTTPS -->
+    <input type="file" id="cam-file-input" accept="image/*" capture="environment" style="display:none">
+    <canvas id="cam-canvas" style="display:none"></canvas>
+    <div id="cam-status-bar" style="display:none;margin-bottom:10px;padding:8px 12px;background:var(--s2);border-radius:8px;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);text-align:center"></div>
+    <div id="modal-hint-area"></div>
+    <div id="lookup-result"></div>
+  </div>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+var STORE_PREFIX = 'booksort7_';
+var BOOKS = [], visibleBooks = [], TB_PRICES = {};
+var curFilter = 'ALL', curSort = 'alpha', curSearch = '', curTab = 'scans';
+var curHaulName = '';
+var TODAY_SCANS = [];
+var pollTimer = null;
+var POLL_MS = 15000; // 15 seconds
+var todaySort = 'new'; // 'new' | 'val' | 'call'
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function fmt(n){ return n==null||n===''?'—':'$'+(parseFloat(n)||0).toFixed(2); }
+function fmtP(n){ return n==null||isNaN(n)?'—':'$'+(parseFloat(n)||0).toFixed(2); }
+
+function rdot(rank){
+  if(!rank||rank<=0)return '';
+  var cls=rank<100000?'rh':rank<500000?'rm':rank<2000000?'rs':'rc';
+  return '<span class="rdot '+cls+'"></span>';
+}
+
+function rankLabel(rank){
+  if(!rank||rank<=0)return 'No rank data';
+  if(rank<100000)return '#'+rank.toLocaleString()+' 🔥 Hot';
+  if(rank<500000)return '#'+rank.toLocaleString()+' ⚡ Medium';
+  if(rank<2000000)return '#'+rank.toLocaleString()+' Slow';
+  return '#'+rank.toLocaleString()+' Cold';
+}
+
+function cardBadge(b){
+  var ec=getEffectiveCall(b);
+  if(ec==='DIRECT BUYBACK')   return 'vbadge b-direct';
+  if(ec==='LIST EBAY')        return 'vbadge b-ebay';
+  if(ec==='LIST EBAY (ABE)')  return 'vbadge b-abebook';
+  if(ec==='VENDOR BUNDLE')    return 'vbadge b-vendor';
+  if(ec==='BORDERLINE')       return 'vbadge b-borderline';
+  if(ec==='SKIP')             return 'vbadge b-skip';
+  return 'vbadge b-default';
+}
+function cardLabel(b){
+  var ec=getEffectiveCall(b);
+  if(ec==='EBAY HOLD'||b.status==='EBAY HOLD') return '🟠 eBay Hold';
+  if(ec==='LIST EBAY (ABE)') return '📚 AbeBooks→eBay';
+  if(ec==='BORDERLINE') return b.bs1v?b.bs1v.replace(/\s*-\s*Sell.*$/i,'').substring(0,12)+' (low)':'Low Value';
+  // Show top vendor when available
+  if(b.bs1v&&b.bs1p>0) return b.bs1v.replace(/\s*-\s*Sell.*$/i,'').substring(0,15);
+  if(ec==='LIST EBAY')  return '🟠 eBay';
+  if(ec==='SKIP')       return '❌ Skip';
+  return 'No Offer';
+}
+
+function scoreClass(s){
+  if(s==='STRONG')return 'score-STRONG';
+  if(s==='GOOD')  return 'score-GOOD';
+  if(s==='MAYBE') return 'score-MAYBE';
+  if(s==='PASS')  return 'score-PASS';
+  return 'score-NODATA';
+}
+function trendClass(t){
+  if(t==='RISING')  return 'trend-RISING';
+  if(t==='FALLING') return 'trend-FALLING';
+  if(t==='STABLE')  return 'trend-STABLE';
+  if(t==='VOLATILE')return 'trend-VOLATILE';
+  return 'trend-STABLE';
+}
+function trendLabel(t){
+  if(t==='RISING')  return '↑ RISING';
+  if(t==='FALLING') return '↓ FALLING';
+  if(t==='STABLE')  return '→ STABLE';
+  if(t==='VOLATILE')return '⚡ VOLATILE';
+  return '';
+}
+
+// ── Normalise a CSV/XLSX row → book object ────────────────────────────────────
+// Handles BOTH new book_pricer_clean.gs columns AND legacy haul-sheet columns
+function norm(r){
+  var rawIsbn = String(r['ISBN']||r['isbn']||'').replace(/\.0+$/,'');
+  var isbn    = rawIsbn.replace(/\D/g,'');
+
+  // Final Call / vendor from new sheet
+  var fc      = String(r['Final Call']||r['finalCall']||r['verdict']||r['Verdict']||'');
+  var bs1v    = String(r['BS #1 Vendor']||r['Best Vendor']||r['vendor']||'').replace(' - Sell Your Books','');
+  var bs1p    = parseFloat(r['BS #1 $']||r['Best Offer']||r['offer']||0)||0;
+
+  var isEbay  = fc==='LIST EBAY' || fc.indexOf('EBAY')>-1 || String(r['Status']||'').indexOf('EBAY')>-1;
+
+  return {
+    isbn:       isbn,
+    title:      String(r['Title']||r['title']||''),
+    author:     String(r['Author']||r['author']||''),
+    binding:    String(r['Binding']||r['binding']||''),
+    // Best offer / vendor (new columns)
+    bs1p:       bs1p,
+    bs1v:       bs1v,
+    bs2p:       parseFloat(r['BS #2 $']||0)||0,
+    bs2v:       String(r['BS #2 Vendor']||'').replace(' - Sell Your Books',''),
+    bs3p:       parseFloat(r['BS #3 $']||0)||0,
+    bs3v:       String(r['BS #3 Vendor']||'').replace(' - Sell Your Books',''),
+    bsCount:    parseFloat(r['BS Vendors']||r['BS Vendors']||0)||0,
+    // Amazon
+    amazon:     parseFloat(r['Amazon Low $']||r['Amazon Price']||r['amazon']||0)||0,
+    rank:       parseFloat(r['Amazon Rank']||r['rank']||0)||0,
+    azSellers:  parseFloat(r['Amazon Sellers']||0)||0,
+    // BS 12-month history
+    bsWeeks:    parseFloat(r['BS Weeks Found']||0)||0,
+    bsBestMax:  parseFloat(r['BS Best Max $']||0)||0,
+    bsWorstMax: parseFloat(r['BS Worst Max $']||0)||0,
+    bsWavg:     parseFloat(r['BS Weighted Avg $']||0)||0,
+    bsTrend:    String(r['BS Trend']||''),
+    bsScore:    String(r['BS Score']||''),
+    bsBestDate: String(r['BS Best Date']||''),
+    bsWorstDate:String(r['BS Worst Date']||''),
+    bsBestV:    String(r['BS Best Vendor']||''),
+    bsWorstV:   String(r['BS Worst Vendor']||''),
+    // AbeBooks
+    abeUsed:    parseFloat(r['ABE Used Low $']||0)||0,
+    abeUsedCt:  parseFloat(r['ABE Used #']||0)||0,
+    abeNew:     parseFloat(r['ABE New Low $']||0)||0,
+    // eBay active listings (Browse API)
+    ebayLow:    parseFloat(r['eBay List Low $']||r['eBay Low']||r['ebayMin']||0)||0,
+    ebayMed:    parseFloat(r['eBay List Med $']||r['eBay Avg']||r['ebayAvg']||0)||0,
+    ebayN:      parseFloat(r['eBay List #']||r['eBay Active #']||r['ebayActive']||0)||0,
+    ebayNet:    parseFloat(r['eBay Net $']||r['eBay Net']||r['ebay_net']||r['ebayNet']||0)||0,
+    // Decision
+    finalCall:  fc,
+    ebay:       isEbay,
+    status:     String(r['_status']||r['Status']||r['status']||''),
+    // Backward compat: old 'offer' field maps to bs1p if not already set
+    offer:      bs1p || parseFloat(r['Best Offer']||r['offer']||0)||0,
+    cover:      'https://pictures.abebooks.com/isbn/'+isbn+'-us-300.jpg',
+    // BooksRun direct API — condition-based buyback prices
+    brAvg:      parseFloat(r['BR Avg $']||0)||0,
+    brGood:     parseFloat(r['BR Good $']||0)||0,
+    brNew:      parseFloat(r['BR New $']||0)||0,
+    // ThriftBooks overlay
+    tbPrice:    0,
+  };
+}
+
+// ── localStorage helpers ───────────────────────────────────────────────────────
+function haulKey(name){ return STORE_PREFIX+'haul_'+btoa(encodeURIComponent(name)).replace(/[=+/]/g,'_'); }
+
+function getSavedHauls(){
+  try{
+    var keys=[];
+    for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i);
+      if(k&&k.startsWith(STORE_PREFIX+'haul_'))keys.push(k);
+    }
+    return keys.map(function(k){try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;}})
+      .filter(Boolean).sort(function(a,b){return(b.saved||0)-(a.saved||0);});
+  }catch(e){return [];}
+}
+function saveHaul(name,books){
+  try{
+    var obj={name:name,books:books,saved:Date.now(),count:books.length,
+      value:books.reduce(function(s,b){return s+(b.offer||0);},0)};
+    localStorage.setItem(haulKey(name),JSON.stringify(obj));
+    updateCacheInfo();return true;
+  }catch(e){alert('Could not save: '+e.message);return false;}
+}
+function deleteHaul(name){ localStorage.removeItem(haulKey(name)); }
+
+function getSavedStatuses(){try{return JSON.parse(localStorage.getItem(STORE_PREFIX+'statuses')||'{}');}catch(e){return {};}}
+function saveStatus(isbn,status){ var st=getSavedStatuses();st[isbn]=status;localStorage.setItem(STORE_PREFIX+'statuses',JSON.stringify(st)); }
+function applyStatuses(books){ var st=getSavedStatuses();books.forEach(function(b){if(st[b.isbn])b.status=st[b.isbn];});return books; }
+
+function updateCacheInfo(){
+  var hauls=getSavedHauls();
+  var el=document.getElementById('cache-info');if(!el)return;
+  if(!hauls.length){el.textContent='';return;}
+  var total=hauls.reduce(function(s,h){return s+h.count;},0);
+  el.innerHTML='<b>'+hauls.length+'</b> hauls · <b>'+total+'</b> books saved offline';
+}
+
+// ── Pick screen ───────────────────────────────────────────────────────────────
+function loadHaulList(){
+  var el=document.getElementById('haul-list');
+  var hauls=getSavedHauls();
+  if(!hauls.length){el.innerHTML='<div class="msg">No saved hauls yet — drop a CSV below</div>';updateCacheInfo();return;}
+  var h='';
+  hauls.forEach(function(haul){
+    h+='<div class="haul-item" onclick="loadSavedHaul(\''+encodeURIComponent(haul.name)+'\')">'+
+      '<div class="haul-name">'+haul.name+'</div>'+
+      '<div class="haul-meta">'+haul.count+' · <b>'+fmt(haul.value)+'</b></div>'+
+      '<div class="haul-arrow">›</div>'+
+      '<button class="haul-del" onclick="event.stopPropagation();confirmDelete(\''+encodeURIComponent(haul.name)+'\')">×</button>'+
+    '</div>';
+  });
+  el.innerHTML=h;
+  updateCacheInfo();
+}
+
+function confirmDelete(encodedName){
+  var name=decodeURIComponent(encodedName);
+  if(confirm('Delete "'+name+'"?')){deleteHaul(name);loadHaulList();}
+}
+
+function loadSavedHaul(encodedName){
+  var name=decodeURIComponent(encodedName);
+  try{
+    var obj=JSON.parse(localStorage.getItem(haulKey(name)));
+    if(!obj||!obj.books){alert('Haul not found');return;}
+    BOOKS=applyStatuses(obj.books);
+    TB_PRICES={};
+    curHaulName=name;
+    showApp(name);
+  }catch(e){alert('Load error: '+e);}
+}
+
+// ── File loading ──────────────────────────────────────────────────────────────
+var dz=document.getElementById('dz');
+var fi=document.getElementById('fi');
+dz.addEventListener('dragover',function(e){e.preventDefault();dz.classList.add('over');});
+dz.addEventListener('dragleave',function(){dz.classList.remove('over');});
+dz.addEventListener('drop',function(e){e.preventDefault();dz.classList.remove('over');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0]);});
+fi.addEventListener('change',function(){if(fi.files[0])handleFile(fi.files[0]);fi.value='';});
+
+function handleFile(file){
+  if(!file)return;
+  if(file.name.match(/\.(html|htm)$/i)){parseTBHtml(file);return;}
+  var isXLSX=file.name.match(/\.xlsx?$/i);
+  var reader=new FileReader();
+  reader.onerror=function(){alert('Could not read file.');};
+  reader.onload=function(e){
+    if(isXLSX){
+      var wb=XLSX.read(e.target.result,{type:'array'});
+      var SKIP=['summary','scans','boxes','payouts','payout','box','settings'];
+      var sheets=wb.SheetNames.filter(function(n){
+        var nl=n.toLowerCase().replace(/[^a-z]/g,'');
+        return !SKIP.some(function(s){return nl===s||nl.startsWith(s);});
+      });
+      if(!sheets.length){alert('No haul sheets found.');return;}
+      var saved=0;
+      sheets.forEach(function(sn){
+        var rows=rowsFromSheet(wb.Sheets[sn]);
+        if(!rows.length)return;
+        if(!Object.keys(rows[0]).some(function(k){return k.toLowerCase().indexOf('isbn')>-1;}))return;
+        var books=rows.map(norm).filter(function(b){return b.isbn&&b.isbn.length>=10;});
+        if(!books.length)return;
+        saveHaul(sn,applyStatuses(books));saved++;
+      });
+      if(!saved){alert('No valid sheets found.');return;}
+      loadHaulList();
+      if(saved===1){
+        var last=getSavedHauls()[0];
+        loadSavedHaul(encodeURIComponent(last.name));
+      }
+    } else {
+      var rows=parseCSV(e.target.result);
+      if(!rows.length){alert('No rows found.');return;}
+      if(!Object.keys(rows[0]).some(function(k){return k.toLowerCase().indexOf('isbn')>-1;})){
+        alert('No ISBN column found.\nColumns: '+Object.keys(rows[0]).slice(0,8).join(', '));return;
+      }
+      var books=rows.map(norm).filter(function(b){return b.isbn&&b.isbn.length>=10;});
+      if(!books.length){alert('No valid books found.');return;}
+      books=applyStatuses(books);
+      var name=file.name.replace(/\.(csv|xlsx?)$/i,'');
+      saveHaul(name,books);
+      BOOKS=books;TB_PRICES={};curHaulName=name;
+      showApp(name);
+    }
+  };
+  isXLSX?reader.readAsArrayBuffer(file):reader.readAsText(file);
+}
+
+function parseCSV(text){
+  var result=Papa.parse(text,{header:true,skipEmptyLines:true});
+  return result.data||[];
+}
+
+function rowsFromSheet(ws){
+  var json=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});
+  return json;
+}
+
+// ThriftBooks HTML merge
+function parseTBHtml(file){
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var html=e.target.result;
+    var match=html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+    if(!match){alert('Could not find ThriftBooks data. Save the full page (Ctrl+S → Webpage Complete).');return;}
+    try{
+      var data=JSON.parse(match[1]);
+      var sl=data.props.pageProps.data.sellList;
+      if(!Array.isArray(sl)||!sl.length){alert('No sell list found.');return;}
+      TB_PRICES={};var count=0,total=0;
+      sl.forEach(function(item){
+        var isbn=String(item.userEnteredIdentifier||'').replace(/\D/g,'');
+        var price=parseFloat(item.quotePrice)||0;
+        if(isbn){TB_PRICES[isbn]=price;if(price>0){count++;total+=price;}}
+      });
+      if(BOOKS.length){
+        var up=0;
+        BOOKS.forEach(function(b){
+          var tp=TB_PRICES[b.isbn]||0;
+          if(tp>0){b.tbPrice=tp;if(tp>b.offer)up++;}
+        });
+        if(curHaulName)saveHaul(curHaulName,BOOKS);
+        renderBooks();
+        alert('ThriftBooks merged: '+count+' offers ($'+total.toFixed(2)+')\n'+up+' books where TB pays more.');
+      }else{
+        alert('TB prices loaded ('+count+' offers). Load a haul CSV first to merge.');
+      }
+    }catch(err){alert('Parse error: '+err);}
+  };
+  reader.readAsText(file);
+}
+
+// ── App shell ─────────────────────────────────────────────────────────────────
+function showApp(name){
+  document.getElementById('pick-screen').style.display='none';
+  document.getElementById('app').style.cssText='display:flex;flex-direction:column;height:100%';
+  document.getElementById('fab').className='fab visible';
+  document.title='BookSort — '+name;
+  buildFilters();renderBooks();renderTools();
+}
+
+function goBack(){
+  stopPolling();
+  BOOKS=[];visibleBooks=[];TB_PRICES={};curHaulName='';
+  curFilter='ALL';curSort='alpha';curSearch='';curTab='scans';
+  document.getElementById('search').value='';
+  document.getElementById('app').style.display='none';
+  document.getElementById('fab').className='fab';
+  document.getElementById('pick-screen').style.display='flex';
+  document.getElementById('scans-ctrl').style.display='block';
+  document.querySelectorAll('.app-tab').forEach(function(t,i){t.classList.toggle('active',i===0);});
+  document.querySelectorAll('.page').forEach(function(p,i){p.classList.toggle('active',i===0);});
+  document.title='BookSort';
+  loadHaulList();
+}
+
+function switchTab(tab,el){
+  curTab=tab;
+  document.querySelectorAll('.app-tab').forEach(function(t){t.classList.remove('active');});
+  el.classList.add('active');
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  document.getElementById('page-'+tab).classList.add('active');
+  document.getElementById('scans-ctrl').style.display=tab==='scans'?'block':'none';
+  if(tab==='actions') { stopPolling(); renderTools(); }
+  if(tab==='today')   { renderTodayScans(); startPolling(); }
+  if(tab==='scans')   { stopPolling(); }
+}
+
+// ── Filters ───────────────────────────────────────────────────────────────────
+function buildFilters(){
+  var counts={};
+  BOOKS.forEach(function(b){
+    var fc=b.finalCall||'NO OFFER';
+    counts[fc]=(counts[fc]||0)+1;
+  });
+  var order=['DIRECT BUYBACK','LIST EBAY','VENDOR BUNDLE','SKIP','NO OFFER'];
+  var h='<button class="pill active" data-v="ALL">All</button>';
+  order.forEach(function(fc){
+    if(counts[fc])h+='<button class="pill" data-v="'+fc+'">'+fcLabel(fc)+' ('+counts[fc]+')</button>';
+  });
+  // Also add top vendor filters
+  var vendors={};
+  BOOKS.forEach(function(b){if(b.bs1v&&b.bs1v!=='No Offer')vendors[b.bs1v]=(vendors[b.bs1v]||0)+1;});
+  Object.keys(vendors).sort(function(a,b){return vendors[b]-vendors[a];}).slice(0,5).forEach(function(v){
+    h+='<button class="pill" data-v="V:'+v+'">'+v.substring(0,12)+'</button>';
+  });
+  document.getElementById('filters').innerHTML=h;
+  document.getElementById('filters').addEventListener('click',function(e){
+    var p=e.target.closest('.pill');if(!p)return;
+    document.querySelectorAll('.pill').forEach(function(x){x.classList.remove('active');});
+    p.classList.add('active');curFilter=p.dataset.v;renderBooks();
+  });
+}
+
+// ── ISO week → readable date ──────────────────────────────────────────────────
+function isoWeekToDate(str){
+  if(!str) return '';
+  // "2026-W14" → "Apr 1, 2026"
+  var m=String(str).match(/^(\d{4})-W(\d{2})$/);
+  if(m){
+    var year=parseInt(m[1]), week=parseInt(m[2]);
+    // ISO week 1 = week containing Jan 4
+    var jan4=new Date(year,0,4);
+    var dow=jan4.getDay()||7;
+    var mon=new Date(jan4);
+    mon.setDate(jan4.getDate()-(dow-1)+(week-1)*7);
+    return mon.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  }
+  // Already a date string (e.g. "2026-04-01")
+  if(/^\d{4}-\d{2}-\d{2}$/.test(str)){
+    var p=str.split('-');
+    return new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]))
+      .toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  }
+  return str;
+}
+
+// ── Thresholds ────────────────────────────────────────────────────────────────
+var THR_KEY = STORE_PREFIX+'thresholds';
+function getThresholds(){
+  try{
+    var t=JSON.parse(localStorage.getItem(THR_KEY)||'{}');
+    return {
+      minBuyback: parseFloat(t.minBuyback)||0.50,
+      minEbayNet: parseFloat(t.minEbayNet)||10.00,
+      abeEbayMin: parseFloat(t.abeEbayMin)||10.00
+    };
+  }catch(e){ return {minBuyback:0.50,minEbayNet:10.00,abeEbayMin:10.00}; }
+}
+function saveThreshold(key,val){
+  var t=getThresholds(); t[key]=parseFloat(val)||0;
+  localStorage.setItem(THR_KEY,JSON.stringify(t));
+  renderBooks();
+  if(curTab==='today') renderTodayScans();
+}
+
+// ── Effective call (applies thresholds + status overrides) ────────────────────
+function getEffectiveCall(b){
+  var thr=getThresholds();
+  var fc=b.finalCall||'';
+  // Status overrides first
+  if(b.status==='EBAY HOLD') return 'LIST EBAY';
+  if(b.status==='Pass')      return 'SKIP';
+  if(b.status==='To Ship'||b.status==='Shipped'||b.status==='Paid') return 'DIRECT BUYBACK';
+  // AbeBooks rescue: no buyback but abe used copy price is high → worth listing
+  if((!b.bs1p||b.bs1p<0.01) && fc!=='LIST EBAY' && b.abeUsed>=thr.abeEbayMin){
+    return 'LIST EBAY (ABE)';
+  }
+  // Below-threshold buyback → borderline
+  if(fc==='DIRECT BUYBACK' && b.bs1p < thr.minBuyback) return 'BORDERLINE';
+  // Below-threshold eBay net → borderline
+  if(fc==='LIST EBAY' && b.ebayNet < thr.minEbayNet) return 'BORDERLINE';
+  return fc||'SKIP';
+}
+
+// ── Paste ISBN from clipboard ─────────────────────────────────────────────────
+function pasteISBN(){
+  var el=document.getElementById('add-isbn');
+  if(navigator.clipboard&&navigator.clipboard.readText){
+    navigator.clipboard.readText().then(function(t){
+      var digits=t.replace(/\D/g,'');
+      if(digits.length>=10){
+        el.value=digits.substring(0,14);
+        lookupISBN();
+      } else if(digits.length>0){
+        el.value=digits;
+        el.focus();
+      } else {
+        el.focus();
+        document.getElementById('lookup-result').innerHTML='<div style="font-size:11px;color:var(--muted);font-family:\'DM Mono\',monospace;padding:6px 0">Nothing numeric on clipboard — long-press the field and tap Paste</div>';
+      }
+    }).catch(function(){
+      el.focus();
+      document.getElementById('lookup-result').innerHTML='<div style="font-size:11px;color:var(--muted);font-family:\'DM Mono\',monospace;padding:6px 0">Clipboard blocked — long-press the text field and choose Paste</div>';
+    });
+  } else {
+    el.focus();
+    document.getElementById('lookup-result').innerHTML='<div style="font-size:11px;color:var(--muted);font-family:\'DM Mono\',monospace;padding:6px 0">Long-press the field above and tap Paste</div>';
+  }
+}
+
+function fcLabel(fc){
+  if(fc==='DIRECT BUYBACK')return '✅ Buyback';
+  if(fc==='LIST EBAY')     return '🟠 eBay';
+  if(fc==='VENDOR BUNDLE') return '📦 Bundle';
+  if(fc==='SKIP')          return '❌ Skip';
+  return fc;
+}
+
+// ── Book list ─────────────────────────────────────────────────────────────────
+function getFiltered(){
+  var books=BOOKS.slice();
+  var q=curSearch.toLowerCase();
+  if(q)books=books.filter(function(b){
+    return(b.title||'').toLowerCase().indexOf(q)>-1||(b.author||'').toLowerCase().indexOf(q)>-1||(b.isbn||'').indexOf(q)>-1;
+  });
+  if(curFilter.startsWith('V:')){
+    var vf=curFilter.slice(2);
+    books=books.filter(function(b){return b.bs1v===vf;});
+  } else if(curFilter!=='ALL'){
+    books=books.filter(function(b){return (b.finalCall||'NO OFFER')===curFilter;});
+  }
+  books.sort(function(a,b){
+    var ka=curSort==='offer'?-(a.offer||0):curSort==='rank'?(a.rank||9999999):(a.title||'').replace(/^(The |A |An )/i,'').toUpperCase();
+    var kb=curSort==='offer'?-(b.offer||0):curSort==='rank'?(b.rank||9999999):(b.title||'').replace(/^(The |A |An )/i,'').toUpperCase();
+    return ka<kb?-1:ka>kb?1:0;
+  });
+  return books;
+}
+
+function setSort(s,btn){curSort=s;document.querySelectorAll('.sort-btns button').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');renderBooks();}
+
+function renderBooks(){
+  var books=getFiltered();visibleBooks=books;
+  var total=books.reduce(function(s,b){return s+(b.offer||0);},0);
+  document.getElementById('vc').textContent=books.length;
+  document.getElementById('vv').textContent=fmt(total);
+  document.getElementById('rl').textContent=books.length+' books';
+  if(!books.length){document.getElementById('book-list').innerHTML='<div class="empty">📭<br>No books match</div>';return;}
+  var html='',lastLtr='';
+  for(var i=0;i<books.length;i++){
+    var b=books[i];
+    var tbP=TB_PRICES[b.isbn]||b.tbPrice||0;
+    var tbBetter=tbP>b.offer&&tbP>0;
+    if(curSort==='alpha'){
+      var t=(b.title||'').replace(/^(The |A |An )/i,'');
+      var ltr=t[0]?t[0].toUpperCase():'#';if(!/[A-Z]/.test(ltr))ltr='#';
+      if(ltr!==lastLtr){html+='<div class="letter-div">'+ltr+'</div>';lastLtr=ltr;}
+    }
+    var bdg=cardBadge(b),lbl=cardLabel(b);
+    var sc=b.bsScore;
+    var scBadge=sc&&sc!=='NO DATA'?'<span class="score-badge-sm '+scoreClass(sc)+'" style="font-size:9px;padding:2px 5px;border-radius:3px;font-family:\'DM Mono\',monospace">'+sc+'</span>':'';
+    var cov='<img src="'+b.cover+'" alt="" loading="lazy" onerror="this.parentNode.innerHTML=\'<div class=cover-ph>📚</div>\'">';
+    html+='<div class="book-card" onclick="openDrawer('+i+')">'+
+      '<div class="cover">'+cov+'</div>'+
+      '<div class="binfo">'+
+        '<div class="btitle">'+(b.title||'ISBN '+b.isbn)+'</div>'+
+        '<div class="bauthor">'+(b.author||'—')+'</div>'+
+        '<div class="bmeta">'+
+          '<span class="'+bdg+'">'+lbl+'</span>'+
+          (b.offer?'<span class="offer">'+fmt(b.offer)+'</span>':'<span class="offer zero">no offer</span>')+
+          scBadge+
+          rdot(b.rank)+
+          (tbBetter?'<span class="tb-tag">TB: '+fmt(tbP)+'</span>':'')+
+        '</div>'+
+      '</div></div>';
+  }
+  document.getElementById('book-list').innerHTML=html;
+}
+
+// ── Copy ISBNs ────────────────────────────────────────────────────────────────
+function copyISBNs(){
+  var isbns=BOOKS.map(function(b){return b.isbn;}).filter(Boolean).join(',');
+  var btn=document.getElementById('copy-isbn-btn');
+  function done(){btn.textContent='✓ Copied! Paste at thriftbooks.com/buyback';btn.classList.add('copied');setTimeout(function(){btn.textContent='Copy All ISBNs for ThriftBooks';btn.classList.remove('copied');},3500);}
+  if(navigator.clipboard){navigator.clipboard.writeText(isbns).then(done).catch(function(){fallback(isbns,done);});}
+  else{fallback(isbns,done);}
+}
+function fallback(text,cb){var ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);cb();}
+
+// ── BOOK DRAWER ───────────────────────────────────────────────────────────────
+function openDrawer(idx){
+  var b=visibleBooks[idx];if(!b)return;
+  var tbP=TB_PRICES[b.isbn]||b.tbPrice||0;
+
+  // ── Score + Trend row ──
+  var sc=b.bsScore||'';
+  var tr=b.bsTrend||'';
+  var scoreRow='';
+  if(sc){
+    scoreRow='<div class="score-row">'+
+      '<span class="score-big '+scoreClass(sc)+'">'+sc+'</span>'+
+      (tr?'<span class="trend-chip '+trendClass(tr)+'">'+trendLabel(tr)+'</span>':'')+
+    '</div>';
+  }
+
+  // ── Top vendor buybacks — merge BS + BooksRun, sort by price ──
+  var vendors=[];
+  if(b.bs1v&&b.bs1p>0)vendors.push({n:b.bs1v,p:b.bs1p,src:'bs'});
+  if(b.bs2v&&b.bs2p>0)vendors.push({n:b.bs2v,p:b.bs2p,src:'bs'});
+  if(b.bs3v&&b.bs3p>0)vendors.push({n:b.bs3v,p:b.bs3p,src:'bs'});
+  if(b.brGood>0) vendors.push({n:'BooksRun',p:b.brGood,src:'br'});
+  vendors.sort(function(a,b){return b.p-a.p;});
+  var vendorBlock='';
+  if(vendors.length){
+    vendorBlock='<div class="dsec">BUYING NOW</div><div class="vr-list">';
+    vendors.forEach(function(v,i){
+      var nameStyle = v.src==='br'?'color:var(--blue)':'';
+      vendorBlock+='<div class="vr-row">'+
+        '<span class="vr-rank">#'+(i+1)+'</span>'+
+        '<span class="vr-name" style="'+nameStyle+'">'+v.n+(v.src==='br'?' ✦':'')+'</span>'+
+        '<span class="vr-price">'+fmt(v.p)+'</span>'+
+      '</div>';
+    });
+    vendorBlock+='</div>';
+    if(b.bsCount>3){
+      vendorBlock+='<div style="font-size:10px;color:var(--muted);font-family:\'DM Mono\',monospace;margin-bottom:12px;padding:0 2px">+'+(b.bsCount-3)+' more BS vendors offering</div>';
+    }
+    if(b.brGood>0){
+      vendorBlock+='<div style="display:flex;gap:0;border-radius:6px;overflow:hidden;margin-bottom:12px;border:1px solid rgba(74,158,232,0.2)">'+
+        '<div style="flex:1;background:rgba(74,158,232,0.07);padding:7px 6px;text-align:center">'+
+          '<div style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--blue)">'+(b.brAvg?fmt(b.brAvg):'—')+'</div>'+
+          '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700">BR Avg</div>'+
+        '</div>'+
+        '<div style="flex:1;background:rgba(74,158,232,0.12);padding:7px 6px;text-align:center;border-left:1px solid rgba(74,158,232,0.2);border-right:1px solid rgba(74,158,232,0.2)">'+
+          '<div style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--blue);font-weight:700">'+fmt(b.brGood)+'</div>'+
+          '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700">BR Good ✦</div>'+
+        '</div>'+
+        '<div style="flex:1;background:rgba(74,158,232,0.07);padding:7px 6px;text-align:center">'+
+          '<div style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--blue)">'+(b.brNew?fmt(b.brNew):'—')+'</div>'+
+          '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700">BR New</div>'+
+        '</div>'+
+      '</div>';
+    }
+  } else if(b.offer===0){
+    vendorBlock='<div class="dsec">BUYING NOW</div><div style="padding:10px 0;font-size:12px;color:var(--muted);font-family:\'DM Mono\',monospace;margin-bottom:4px">No current vendor offers</div>';
+  }
+
+  // ── ThriftBooks row ──
+  var tbRow=tbP>0?'<div class="drow"><span class="dlabel">ThriftBooks</span>'+
+    '<span class="dval" style="color:'+(tbP>b.offer?'var(--thriftbooks)':'var(--muted)')+'">'+fmt(tbP)+(tbP>b.offer?' ↑ beats buyback':' (lower)')+'</span></div>':'';
+
+  // ── 12-month history ──
+  var histBlock='';
+  if(b.bsWeeks>0){
+    var bestDate  = b.bsBestDate  ? isoWeekToDate(b.bsBestDate)  : '';
+    var worstDate = b.bsWorstDate ? isoWeekToDate(b.bsWorstDate) : '';
+    histBlock='<div style="font-size:9px;font-family:\'DM Mono\',monospace;color:orange;padding:2px 4px;margin-bottom:4px">DEBUG bestDate="'+b.bsBestDate+'" bestV="'+(b.bsBestV||'')+'" worstDate="'+b.bsWorstDate+'" worstV="'+(b.bsWorstV||'')+'"</div>'+
+      '<div class="dsec">12-MONTH HISTORY ('+b.bsWeeks+' wks · avg '+fmtP(b.bsWavg)+')</div>'+
+      '<div style="border-radius:8px;overflow:hidden;margin-bottom:12px;border:1px solid var(--border)">'+
+        '<div style="display:flex;align-items:center;padding:9px 12px;background:rgba(74,232,158,0.06);border-bottom:1px solid var(--border)">'+
+          '<span style="font-size:13px;margin-right:8px">📈</span>'+
+          '<span style="flex:1;font-family:\'DM Mono\',monospace;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Best offer</span>'+
+          '<span style="font-family:\'DM Mono\',monospace;font-size:15px;font-weight:700;color:var(--green)">'+fmtP(b.bsBestMax)+'</span>'+
+        '</div>'+
+        '<div style="padding:4px 12px 8px;background:rgba(74,232,158,0.04);border-bottom:1px solid var(--border);font-size:10px;font-family:\'DM Mono\',monospace;color:var(--muted)">'+
+          ((b.bsBestV||'')||bestDate ? ((b.bsBestV||'')||'—')+(bestDate?' · week of '+bestDate:'') : (b.bsBestV||'')+'|'+b.bsBestDate+'|'+(b.bsWorstV||'')+'|'+b.bsWorstDate)+
+        '</div>'+
+        '<div style="display:flex;align-items:center;padding:9px 12px;background:rgba(255,107,53,0.04);border-bottom:1px solid var(--border)">'+
+          '<span style="font-size:13px;margin-right:8px">📉</span>'+
+          '<span style="flex:1;font-family:\'DM Mono\',monospace;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Worst offer</span>'+
+          '<span style="font-family:\'DM Mono\',monospace;font-size:15px;font-weight:700;color:var(--muted)">'+fmtP(b.bsWorstMax)+'</span>'+
+        '</div>'+
+        '<div style="padding:4px 12px 8px;background:rgba(255,107,53,0.03);font-size:10px;font-family:\'DM Mono\',monospace;color:var(--muted)">'+
+          ((b.bsWorstV||'')||worstDate ? ((b.bsWorstV||'')||'—')+(worstDate?' · week of '+worstDate:'') : (b.bsBestV||'')+'|'+b.bsBestDate+'|'+(b.bsWorstV||'')+'|'+b.bsWorstDate)+
+        '</div>'+
+      '</div>';
+  } else if(sc==='NO DATA'||sc===''){
+    histBlock='<div class="dsec">12-MONTH HISTORY</div><div style="font-size:11px;color:var(--muted);font-family:\'DM Mono\',monospace;margin-bottom:12px">No historical data found</div>';
+  }
+
+  // ── AbeBooks ──
+  var abeBlock='';
+  if(b.abeUsed>0||b.abeNew>0){
+    abeBlock='<div class="dsec">ABEBOOKS (CURRENT LISTINGS)</div>'+
+      '<div class="stat3">'+
+        (b.abeUsed?'<div class="stat3-cell"><div class="stat3-val">'+fmtP(b.abeUsed)+'</div><div class="stat3-lbl">Used Low</div></div>':'<div class="stat3-cell"><div class="stat3-val" style="color:var(--muted)">—</div><div class="stat3-lbl">Used Low</div></div>')+
+        (b.abeUsedCt?'<div class="stat3-cell"><div class="stat3-val">'+b.abeUsedCt+'</div><div class="stat3-lbl">Copies</div></div>':'<div class="stat3-cell"><div class="stat3-val" style="color:var(--muted)">—</div><div class="stat3-lbl">Copies</div></div>')+
+        (b.abeNew?'<div class="stat3-cell"><div class="stat3-val">'+fmtP(b.abeNew)+'</div><div class="stat3-lbl">New Low</div></div>':'<div class="stat3-cell"><div class="stat3-val" style="color:var(--muted)">—</div><div class="stat3-lbl">New Low</div></div>')+
+      '</div>';
+  }
+
+  // ── eBay active listings ──
+  var ebayBlock='';
+  if(b.ebayN>0){
+    var netColor=b.ebayNet>=10?'var(--green)':b.ebayNet>=3?'var(--yellow)':'var(--muted)';
+    ebayBlock='<div class="dsec">EBAY ACTIVE LISTINGS ('+b.ebayN+' total)</div>'+
+      '<div class="stat3">'+
+        '<div class="stat3-cell"><div class="stat3-val">'+fmtP(b.ebayLow)+'</div><div class="stat3-lbl">Low</div></div>'+
+        '<div class="stat3-cell"><div class="stat3-val" style="color:var(--green)">'+fmtP(b.ebayMed)+'</div><div class="stat3-lbl">Median</div></div>'+
+        '<div class="stat3-cell"><div class="stat3-val" style="color:'+netColor+'">'+fmtP(b.ebayNet)+'</div><div class="stat3-lbl">Net Est.</div></div>'+
+      '</div>';
+  }
+
+  // ── Amazon row ──
+  var azRow='<div class="drow"><span class="dlabel">Amazon</span>'+
+    '<span class="dval" style="font-size:11px">'+
+      (b.amazon?fmt(b.amazon)+' · ':'')+rankLabel(b.rank)+(b.azSellers?' · '+b.azSellers+' sellers':'')+
+    '</span></div>';
+
+  // ── Final action button ──
+  var fc=b.finalCall||'';
+  var act='';
+  if(fc==='DIRECT BUYBACK'){
+    act='<div class="daction da-direct">✅ DIRECT BUYBACK<br><small style="font-size:11px;opacity:.8">Ship to '+b.bs1v+' · '+fmt(b.bs1p)+'</small></div>';
+  } else if(fc==='LIST EBAY'){
+    act='<div class="daction da-ebay">🟠 LIST ON EBAY<br><small style="font-size:11px;opacity:.8">Est. net '+fmt(b.ebayNet)+'</small></div>';
+  } else if(fc==='VENDOR BUNDLE'){
+    act='<div class="daction da-vendor">📦 VENDOR BUNDLE<br><small style="font-size:11px;opacity:.8">'+sc+' score · hold for next batch</small></div>';
+  } else {
+    act='<div class="daction da-donate">❌ SKIP / DONATE</div>';
+  }
+
+  // ── Status editor ──
+  var statusOpts=[
+    {val:'',       label:'Clear'},
+    {val:'To Ship',label:'📦 To Ship'},
+    {val:'Shipped',label:'🚚 Shipped'},
+    {val:'Paid',   label:'💰 Paid'},
+    {val:'EBAY HOLD',label:'🟠 eBay Hold'},
+    {val:'Pass',   label:'❌ Pass'}
+  ];
+  var statusHtml='<div class="dsec">STATUS</div><div style="flex-wrap:wrap;display:flex;margin-bottom:8px">';
+  statusOpts.forEach(function(s){
+    statusHtml+='<button class="status-btn'+(b.status===s.val?' active-status':'')+'" onclick="setBookStatus('+idx+',\''+s.val+'\')">'+s.label+'</button>';
+  });
+  statusHtml+='</div>';
+
+  document.getElementById('dc').innerHTML=
+    '<div class="dcov"><img src="'+b.cover+'" alt="" onerror="this.src=\'\'"></div>'+
+    '<div class="dtitle">'+(b.title||'Unknown')+'</div>'+
+    '<div class="dauthor">'+(b.author||'—')+(b.binding?' · '+b.binding:'')+'</div>'+
+    scoreRow+
+    vendorBlock+
+    tbRow+
+    histBlock+
+    abeBlock+
+    ebayBlock+
+    azRow+
+    '<div class="drow" style="border:none"><span class="dlabel">ISBN</span><span class="isbn-chip">'+b.isbn+'</span></div>'+
+    '<a class="ebay-link" href="https://www.ebay.com/sch/i.html?_nkw='+encodeURIComponent(b.isbn)+'&_sacat=267&LH_Complete=1&LH_Sold=1" target="_blank">🔍 eBay Sold Comps ↗</a>'+
+    act+
+    statusHtml;
+
+  document.getElementById('overlay').className='overlay open';
+  document.getElementById('drawer').className='drawer open';
+}
+
+function setBookStatus(idx,status){
+  var b=visibleBooks[idx];if(!b)return;
+  b.status=status;
+  var mi=BOOKS.findIndex(function(x){return x.isbn===b.isbn;});
+  if(mi>=0){ BOOKS[mi].status=status; }
+  // Also update in TODAY_SCANS if present
+  var ti=TODAY_SCANS.findIndex(function(x){return x.isbn===b.isbn;});
+  if(ti>=0){ TODAY_SCANS[ti].status=status; saveTodayScans(TODAY_SCANS); }
+  saveStatus(b.isbn,status);
+  if(curHaulName)saveHaul(curHaulName,BOOKS);
+  openDrawer(idx);
+  renderBooks();
+}
+
+function closeDrawer(){
+  document.getElementById('overlay').className='overlay';
+  document.getElementById('drawer').className='drawer';
+}
+
+// ── Tools tab ─────────────────────────────────────────────────────────────────
+function thrRow(label,hint,key,val){
+  return '<div style="margin-bottom:12px">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">'+
+      '<span style="font-size:12px;font-weight:700">'+label+'</span>'+
+      '<div style="display:flex;align-items:center;gap:6px">'+
+        '<span style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--accent)" id="thr-val-'+key+'">$'+parseFloat(val).toFixed(2)+'</span>'+
+        '<input type="range" min="0" max="'+(key==='minBuyback'?'5':'30')+'" step="0.25" value="'+val+'" '+
+          'style="width:100px;accent-color:var(--accent)" '+
+          'oninput="document.getElementById(\'thr-val-'+key+'\').textContent=\'$\'+parseFloat(this.value).toFixed(2)" '+
+          'onchange="saveThreshold(\''+key+'\',this.value)">'+
+      '</div>'+
+    '</div>'+
+    '<div style="font-size:10px;color:var(--muted);font-family:\'DM Mono\',monospace">'+hint+'</div>'+
+  '</div>';
+}
+
+function renderTools(){
+  var thr=getThresholds();
+  document.getElementById('action-grid').innerHTML=
+    '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">PRICING THRESHOLDS</div>'+
+    '<div style="background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:16px">'+
+      thrRow('Min Buyback $','Offers below this = 🟡 yellow (not green)','minBuyback',thr.minBuyback)+
+      thrRow('Min eBay Net $','eBay listings below this = orange, not green','minEbayNet',thr.minEbayNet)+
+      thrRow('AbeBooks → eBay $','No buyback but Abe used ≥ this = flag for eBay','abeEbayMin',thr.abeEbayMin)+
+    '</div>'+
+    '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">THRIFTBOOKS WORKFLOW</div>'+
+    '<div style="background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:16px">'+
+      '<div style="font-size:13px;font-weight:700;margin-bottom:5px">1. Copy ISBNs → paste into ThriftBooks</div>'+
+      '<div style="font-size:11px;color:var(--muted);font-family:\'DM Mono\',monospace;margin-bottom:12px">thriftbooks.com/buyback → paste all → let prices load</div>'+
+      '<div style="font-size:13px;font-weight:700;margin-bottom:5px">2. Save as HTML → drop here</div>'+
+      '<div style="font-size:11px;color:var(--muted);font-family:\'DM Mono\',monospace">File → Save Page As → Webpage Complete<br>Then drop the .html file on the pick screen</div>'+
+    '</div>'+
+    '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">SUPPORTED FORMATS</div>'+
+    '<div style="background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:14px 16px;font-size:12px;line-height:1.9;font-family:\'DM Mono\',monospace;color:var(--muted)">'+
+      '📊 <b style="color:var(--text)">CSV / XLSX</b> — from book_pricer_clean.gs sheet<br>'+
+      '📱 <b style="color:var(--text)">ThriftBooks HTML</b> — saved buyback page<br>'+
+      '💾 <b style="color:var(--text)">Hauls saved locally</b> — work offline, images cached'+
+    '</div>';
+}
+
+// ── Google Sheet loading ──────────────────────────────────────────────────────
+var SCRIPT_URL_KEY = STORE_PREFIX + 'script_url';
+var DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwYrH2IMm7flUD1s5-5P7VV41lfTDo6lOlANNxfT5MxdqCgv5eruDEH_oZKkbf03yXJ/exec';
+
+function initSheetUrl(){
+  // Use saved URL or fall back to hardcoded default
+  var saved = localStorage.getItem(SCRIPT_URL_KEY) || DEFAULT_SCRIPT_URL;
+  document.getElementById('sheet-url').value = saved;
+  // Persist default so lookupISBN() can find it immediately
+  if(!localStorage.getItem(SCRIPT_URL_KEY)){
+    localStorage.setItem(SCRIPT_URL_KEY, DEFAULT_SCRIPT_URL);
+  }
+}
+
+// JSONP helper — works from local file:// on iPhone (fetch() is blocked there).
+// GAS doGet() already returns callback(json) when ?callback= is present.
+function jsonpRequest(url, params, onSuccess, onError, timeoutMs){
+  var cbName = 'bsCb_' + Date.now() + '_' + Math.floor(Math.random()*9999);
+  var script  = document.createElement('script');
+  var timer   = setTimeout(function(){ cleanup(); onError(new Error('Request timed out')); }, timeoutMs||30000);
+
+  window[cbName] = function(data){ cleanup(); onSuccess(data); };
+
+  function cleanup(){
+    clearTimeout(timer);
+    try{ delete window[cbName]; }catch(e){}
+    if(script.parentNode) script.parentNode.removeChild(script);
+  }
+
+  script.onerror = function(){ cleanup(); onError(new Error('Network error — check your URL and internet connection')); };
+
+  // Build URL
+  var sep = url.indexOf('?') > -1 ? '&' : '?';
+  var qs  = 'callback=' + cbName;
+  if(params) Object.keys(params).forEach(function(k){ qs += '&' + k + '=' + encodeURIComponent(params[k]); });
+  script.src = url + sep + qs;
+  document.head.appendChild(script);
+}
+
+function loadFromSheet(){
+  var urlEl  = document.getElementById('sheet-url');
+  var btn    = document.getElementById('sheet-load-btn');
+  var status = document.getElementById('sheet-status');
+  var url    = urlEl.value.trim();
+  if(!url){ status.className='sheet-status err'; status.textContent='Paste the Apps Script web app URL first'; return; }
+  if(!url.includes('script.google.com')){ status.className='sheet-status err'; status.textContent='URL should be a script.google.com URL'; return; }
+  localStorage.setItem(SCRIPT_URL_KEY, url);
+  btn.disabled=true;
+  status.className='sheet-status';
+  status.innerHTML='<span class="spinner"></span> Loading sheet…';
+
+  jsonpRequest(url, null,
+    function(data){
+      btn.disabled=false;
+      var books = data.books || [];
+      if(!books.length){
+        status.className='sheet-status err';
+        status.textContent='Sheet returned 0 books — run Book Pricer → Run All in the sheet first';
+        return;
+      }
+      var normalized = books.map(norm).filter(function(b){return b.isbn&&b.isbn.length>=10;});
+      normalized = applyStatuses(normalized);
+      var name = data.sheet || 'Google Sheet';
+      saveHaul(name, normalized);
+      BOOKS = normalized; TB_PRICES = {}; curHaulName = name;
+      status.className='sheet-status ok';
+      status.textContent='✓ Loaded '+normalized.length+' books from "'+name+'"';
+      showApp(name);
+    },
+    function(err){
+      btn.disabled=false;
+      status.className='sheet-status err';
+      status.innerHTML='Error: '+String(err.message||err)+'<br><small>Make sure: Deploy → Who has access → <b>Anyone</b> (not "Anyone with Google account")</small>';
+    },
+    20000
+  );
+}
+
+// ── Add ISBN modal ────────────────────────────────────────────────────────────
+var pendingBook = null;
+
+function openAddModal(){
+  var scriptUrl = localStorage.getItem(SCRIPT_URL_KEY) || '';
+  var hintEl = document.getElementById('modal-hint-area');
+  if(!scriptUrl){
+    hintEl.innerHTML='<div class="no-script-warn">⚠ No Apps Script URL saved yet.<br>Go back and paste your URL to enable live lookup.<br>ISBN lookup won\'t work without it.</div>';
+  } else {
+    hintEl.innerHTML='<div class="modal-hint">Scan barcode or type ISBN · data pulled from your GAS script</div>';
+  }
+  document.getElementById('lookup-result').innerHTML='';
+  document.getElementById('add-isbn').value='';
+  pendingBook=null;
+  document.getElementById('add-modal').className='modal-overlay open';
+  setTimeout(function(){document.getElementById('add-isbn').focus();},200);
+}
+
+function lookupISBN(){
+  var isbn = document.getElementById('add-isbn').value.replace(/\D/g,'');
+  if(isbn.length<10){ document.getElementById('lookup-result').innerHTML='<div style="color:var(--red);font-size:12px;font-family:\'DM Mono\',monospace">ISBN must be 10 or 13 digits</div>'; return; }
+  var scriptUrl = localStorage.getItem(SCRIPT_URL_KEY) || '';
+  if(!scriptUrl){
+    document.getElementById('lookup-result').innerHTML='<div style="color:var(--yellow);font-size:12px;font-family:\'DM Mono\',monospace">No Apps Script URL set — save one on the pick screen first</div>';
+    return;
+  }
+
+  var btn = document.getElementById('lookup-btn');
+  btn.disabled=true;
+  document.getElementById('lookup-result').innerHTML='<div style="padding:20px;text-align:center"><span class="spinner"></span> <span style="font-size:11px;color:var(--muted);font-family:\'DM Mono\',monospace;margin-left:8px">Pulling data… (~10 sec)</span></div>';
+
+  jsonpRequest(scriptUrl, {action:'lookup', isbn:isbn},
+    function(data){
+      btn.disabled=false;
+      if(data.error){
+        document.getElementById('lookup-result').innerHTML='<div style="color:var(--red);font-family:\'DM Mono\',monospace;font-size:12px">Error: '+data.error+'</div>';
+        return;
+      }
+      var book = norm(data.book || {});
+      pendingBook = book;
+      addToTodayScans(book);
+      renderLookupResult(book);
+    },
+    function(err){
+      btn.disabled=false;
+      document.getElementById('lookup-result').innerHTML='<div style="color:var(--red);font-family:\'DM Mono\',monospace;font-size:12px">'+String(err.message||err)+'</div>';
+    },
+    35000  // lookup takes ~10-15s, give it 35s to be safe
+  );
+}
+
+// Also allow pressing Enter in the ISBN field
+document.getElementById('add-isbn').addEventListener('keydown',function(e){
+  if(e.key==='Enter'||e.keyCode===13)lookupISBN();
+});
+
+function renderLookupResult(b){
+  var ec=getEffectiveCall(b);
+  // Color-coded verdict banner
+  var bannerColor,bannerIcon,bannerText;
+  if(ec==='DIRECT BUYBACK'){bannerColor='var(--green)';bannerIcon='✅';bannerText='BUY — Ship to '+(b.bs1v||'vendor')+' · '+fmt(b.bs1p);}
+  else if(ec==='LIST EBAY'||ec==='LIST EBAY (ABE)'){
+    var ebayGood=b.ebayNet>=getThresholds().minEbayNet;
+    bannerColor=ebayGood?'#2A5A3A':'#4A3A00';bannerIcon=ebayGood?'🟢':'🟠';
+    var ebayNote=ec==='LIST EBAY (ABE)'?'AbeBooks $'+b.abeUsed+' → maybe eBay':'est. net '+fmt(b.ebayNet);
+    bannerText=(ebayGood?'BUY':'MAYBE')+' — eBay  '+ebayNote;
+  }
+  else if(ec==='VENDOR BUNDLE'){bannerColor='#3A2800';bannerIcon='📦';bannerText='MAYBE — Bundle  '+(b.bsScore||'')+' score';}
+  else if(ec==='BORDERLINE'){bannerColor='#3A2A00';bannerIcon='🟡';bannerText='LOW VALUE — '+(b.bs1v||'offer')+' · '+fmt(b.bs1p)+' (below threshold)';}
+  else{bannerColor='#2A0A0A';bannerIcon='❌';bannerText='SKIP / DONATE — no profitable offer';}
+
+  var html = buildDrawerHTML(b);
+  var alreadyIn = BOOKS.some(function(x){return x.isbn===b.isbn;});
+  var addBtn = alreadyIn
+    ? '<button class="add-haul-btn" style="background:var(--s2);color:var(--text);border:1px solid var(--border);margin-top:12px" onclick="confirmAddBook()">↻ Update in Haul</button>'
+    : '<button class="add-haul-btn" style="margin-top:12px" onclick="confirmAddBook()">+ Add to Haul</button>';
+
+  document.getElementById('lookup-result').innerHTML=
+    '<div style="background:'+bannerColor+';border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:12px 14px;margin-bottom:12px;font-weight:800;font-size:13px;font-family:\'Syne\',sans-serif;line-height:1.4;color:var(--text)">'+
+      bannerIcon+' '+bannerText+
+    '</div>'+
+    '<div class="dcov" style="margin:0 auto 10px"><img src="'+b.cover+'" alt="" onerror="this.src=\'\'"></div>'+
+    '<div class="dtitle" style="text-align:center">'+(b.title||'ISBN '+b.isbn)+'</div>'+
+    '<div class="dauthor" style="text-align:center;margin-bottom:14px">'+(b.author||'—')+(b.binding?' · '+b.binding:'')+'</div>'+
+    html+
+    addBtn+
+    '<div style="text-align:center;margin-top:10px">'+
+      '<a href="https://www.ebay.com/sch/i.html?_nkw='+encodeURIComponent(b.isbn)+'&_sacat=267&LH_Complete=1&LH_Sold=1" target="_blank" class="ebay-link">🔍 eBay Sold Comps ↗</a>'+
+    '</div>';
+}
+
+// Shared drawer HTML builder — used by both openDrawer() and renderLookupResult()
+function buildDrawerHTML(b){
+  var sc=b.bsScore||'', tr=b.bsTrend||'';
+
+  // Score + trend
+  var scoreRow='';
+  if(sc){
+    scoreRow='<div class="score-row">'+
+      '<span class="score-big '+scoreClass(sc)+'">'+sc+'</span>'+
+      (tr?'<span class="trend-chip '+trendClass(tr)+'">'+trendLabel(tr)+'</span>':'')+
+    '</div>';
+  }
+
+  // Vendor list — merge BS vendors + BooksRun, sort by price
+  var vendors=[];
+  if(b.bs1v&&b.bs1p>0)vendors.push({n:b.bs1v,p:b.bs1p,src:'bs'});
+  if(b.bs2v&&b.bs2p>0)vendors.push({n:b.bs2v,p:b.bs2p,src:'bs'});
+  if(b.bs3v&&b.bs3p>0)vendors.push({n:b.bs3v,p:b.bs3p,src:'bs'});
+  // Add BooksRun Good as a vendor entry if it has a price
+  // (use Good condition — most common for resellers)
+  if(b.brGood>0) vendors.push({n:'BooksRun',p:b.brGood,src:'br'});
+  // Re-sort so highest offer is always #1
+  vendors.sort(function(a,b){return b.p-a.p;});
+  var topOffer = vendors.length ? vendors[0].p : 0;
+  var vendorBlock='';
+  if(vendors.length){
+    vendorBlock='<div class="dsec">BUYING NOW</div><div class="vr-list">';
+    vendors.forEach(function(v,i){
+      var isBest = i===0 && vendors.length>1;
+      var nameStyle = v.src==='br' ? 'color:var(--blue)' : '';
+      var priceStyle = isBest ? 'color:var(--green);font-weight:700' : 'color:var(--green)';
+      vendorBlock+='<div class="vr-row">'+
+        '<span class="vr-rank">#'+(i+1)+'</span>'+
+        '<span class="vr-name" style="'+nameStyle+'">'+v.n+(v.src==='br'?' ✦':'')+'</span>'+
+        '<span class="vr-price" style="'+priceStyle+'">'+fmt(v.p)+'</span>'+
+      '</div>';
+    });
+    vendorBlock+='</div>';
+    if(b.bsCount>3) vendorBlock+='<div style="font-size:10px;color:var(--muted);font-family:\'DM Mono\',monospace;margin-bottom:12px;padding:0 2px">+'+(b.bsCount-3)+' more BS vendors offering</div>';
+    // Show full BooksRun condition breakdown if it has data
+    if(b.brGood>0){
+      vendorBlock+='<div style="display:flex;gap:0;border-radius:6px;overflow:hidden;margin-bottom:12px;border:1px solid rgba(74,158,232,0.2)">'+
+        '<div style="flex:1;background:rgba(74,158,232,0.07);padding:7px 6px;text-align:center">'+
+          '<div style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--blue)">'+(b.brAvg?fmt(b.brAvg):'—')+'</div>'+
+          '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700">BR Avg</div>'+
+        '</div>'+
+        '<div style="flex:1;background:rgba(74,158,232,0.12);padding:7px 6px;text-align:center;border-left:1px solid rgba(74,158,232,0.2);border-right:1px solid rgba(74,158,232,0.2)">'+
+          '<div style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--blue);font-weight:700">'+fmt(b.brGood)+'</div>'+
+          '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700">BR Good ✦</div>'+
+        '</div>'+
+        '<div style="flex:1;background:rgba(74,158,232,0.07);padding:7px 6px;text-align:center">'+
+          '<div style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--blue)">'+(b.brNew?fmt(b.brNew):'—')+'</div>'+
+          '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700">BR New</div>'+
+        '</div>'+
+      '</div>';
+    }
+  } else {
+    vendorBlock='<div class="dsec">BUYING NOW</div><div style="padding:8px 0;font-size:12px;color:var(--muted);font-family:\'DM Mono\',monospace;margin-bottom:4px">No current vendor offers</div>';
+  }
+
+  // ThriftBooks
+  var tbP=b.tbPrice||0;
+  var tbRow=tbP>0?'<div class="drow"><span class="dlabel">ThriftBooks</span>'+
+    '<span class="dval" style="color:'+(tbP>b.offer?'var(--thriftbooks)':'var(--muted)')+'">'+fmt(tbP)+(tbP>b.offer?' ↑ beats buyback':'')+' </span></div>':'';
+
+  // History
+  var histBlock='';
+  if(b.bsWeeks>0){
+    var bestDate  = b.bsBestDate  ? isoWeekToDate(b.bsBestDate)  : '';
+    var worstDate = b.bsWorstDate ? isoWeekToDate(b.bsWorstDate) : '';
+    histBlock='<div style="font-size:9px;font-family:\'DM Mono\',monospace;color:orange;padding:2px 4px;margin-bottom:4px">DEBUG bestDate="'+b.bsBestDate+'" bestV="'+(b.bsBestV||'')+'" worstDate="'+b.bsWorstDate+'" worstV="'+(b.bsWorstV||'')+'"</div>'+
+      '<div class="dsec">12-MONTH HISTORY ('+b.bsWeeks+' wks · avg '+fmtP(b.bsWavg)+')</div>'+
+      '<div style="border-radius:8px;overflow:hidden;margin-bottom:12px;border:1px solid var(--border)">'+
+        '<div style="display:flex;align-items:center;padding:9px 12px;background:rgba(74,232,158,0.06);border-bottom:1px solid var(--border)">'+
+          '<span style="font-size:13px;margin-right:8px">📈</span>'+
+          '<span style="flex:1;font-family:\'DM Mono\',monospace;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Best offer</span>'+
+          '<span style="font-family:\'DM Mono\',monospace;font-size:15px;font-weight:700;color:var(--green)">'+fmtP(b.bsBestMax)+'</span>'+
+        '</div>'+
+        '<div style="padding:4px 12px 8px;background:rgba(74,232,158,0.04);border-bottom:1px solid var(--border);font-size:10px;font-family:\'DM Mono\',monospace;color:var(--muted)">'+
+          ((b.bsBestV||'')||bestDate ? ((b.bsBestV||'')||'—')+(bestDate?' · week of '+bestDate:'') : (b.bsBestV||'')+'|'+b.bsBestDate+'|'+(b.bsWorstV||'')+'|'+b.bsWorstDate)+
+        '</div>'+
+        '<div style="display:flex;align-items:center;padding:9px 12px;background:rgba(255,107,53,0.04);border-bottom:1px solid var(--border)">'+
+          '<span style="font-size:13px;margin-right:8px">📉</span>'+
+          '<span style="flex:1;font-family:\'DM Mono\',monospace;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Worst offer</span>'+
+          '<span style="font-family:\'DM Mono\',monospace;font-size:15px;font-weight:700;color:var(--muted)">'+fmtP(b.bsWorstMax)+'</span>'+
+        '</div>'+
+        '<div style="padding:4px 12px 8px;background:rgba(255,107,53,0.03);font-size:10px;font-family:\'DM Mono\',monospace;color:var(--muted)">'+
+          ((b.bsWorstV||'')||worstDate ? ((b.bsWorstV||'')||'—')+(worstDate?' · week of '+worstDate:'') : (b.bsBestV||'')+'|'+b.bsBestDate+'|'+(b.bsWorstV||'')+'|'+b.bsWorstDate)+
+        '</div>'+
+      '</div>';
+  }
+
+  // AbeBooks
+  var abeBlock='';
+  if(b.abeUsed>0||b.abeNew>0){
+    abeBlock='<div class="dsec">ABEBOOKS</div>'+
+      '<div class="stat3">'+
+        '<div class="stat3-cell"><div class="stat3-val">'+(b.abeUsed?fmtP(b.abeUsed):'—')+'</div><div class="stat3-lbl">Used Low</div></div>'+
+        '<div class="stat3-cell"><div class="stat3-val">'+(b.abeUsedCt||'—')+'</div><div class="stat3-lbl">Copies</div></div>'+
+        '<div class="stat3-cell"><div class="stat3-val">'+(b.abeNew?fmtP(b.abeNew):'—')+'</div><div class="stat3-lbl">New Low</div></div>'+
+      '</div>';
+  }
+
+  // eBay
+  var ebayBlock='';
+  if(b.ebayN>0){
+    var netColor=b.ebayNet>=10?'var(--green)':b.ebayNet>=3?'var(--yellow)':'var(--muted)';
+    ebayBlock='<div class="dsec">EBAY ACTIVE ('+b.ebayN+' listings)</div>'+
+      '<div class="stat3">'+
+        '<div class="stat3-cell"><div class="stat3-val">'+fmtP(b.ebayLow)+'</div><div class="stat3-lbl">Low</div></div>'+
+        '<div class="stat3-cell"><div class="stat3-val" style="color:var(--green)">'+fmtP(b.ebayMed)+'</div><div class="stat3-lbl">Median</div></div>'+
+        '<div class="stat3-cell"><div class="stat3-val" style="color:'+netColor+'">'+fmtP(b.ebayNet)+'</div><div class="stat3-lbl">Net Est.</div></div>'+
+      '</div>';
+  }
+
+  // Amazon
+  var azRow='<div class="drow"><span class="dlabel">Amazon</span>'+
+    '<span class="dval" style="font-size:11px">'+(b.amazon?fmt(b.amazon)+' · ':'')+rankLabel(b.rank)+(b.azSellers?' · '+b.azSellers+' sellers':'')+
+    '</span></div>';
+
+  // Final call action
+  var fc=b.finalCall||'', act='';
+  if(fc==='DIRECT BUYBACK')      act='<div class="daction da-direct">✅ DIRECT BUYBACK<br><small style="font-size:11px;opacity:.8">Ship to '+b.bs1v+' · '+fmt(b.bs1p)+'</small></div>';
+  else if(fc==='LIST EBAY')      act='<div class="daction da-ebay">🟠 LIST ON EBAY<br><small style="font-size:11px;opacity:.8">Est. net '+fmt(b.ebayNet)+'</small></div>';
+  else if(fc==='VENDOR BUNDLE')  act='<div class="daction da-vendor">📦 VENDOR BUNDLE<br><small style="font-size:11px;opacity:.8">'+sc+' score · hold for next batch</small></div>';
+  else                           act='<div class="daction da-donate">❌ SKIP / DONATE</div>';
+
+  return scoreRow+vendorBlock+tbRow+histBlock+abeBlock+ebayBlock+azRow+
+    '<div class="drow" style="border:none"><span class="dlabel">ISBN</span><span class="isbn-chip">'+b.isbn+'</span></div>'+
+    act;
+}
+
+function confirmAddBook(){
+  if(!pendingBook)return;
+  var existing = BOOKS.findIndex(function(x){return x.isbn===pendingBook.isbn;});
+  if(existing>=0){ BOOKS[existing]=pendingBook; }
+  else { BOOKS.push(pendingBook); }
+  if(curHaulName) saveHaul(curHaulName, BOOKS);
+  buildFilters(); renderBooks();
+  document.getElementById('lookup-result').innerHTML=
+    '<div style="color:var(--green);font-size:13px;font-weight:700;text-align:center;padding:12px">✓ Added to haul!</div>'+
+    '<div style="text-align:center"><button style="background:none;border:none;color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;font-family:\'Syne\',sans-serif" onclick="document.getElementById(\'add-isbn\').value=\'\';document.getElementById(\'lookup-result\').innerHTML=\'\';document.getElementById(\'add-isbn\').focus()">Scan another</button></div>';
+  document.getElementById('add-isbn').value='';
+  pendingBook=null;
+}
+
+// ── QR Robot Auto-Poll ───────────────────────────────────────────────────────
+// When the TODAY tab is active, poll the Apps Script every 15s for new books.
+// QR Robot writes ISBNs → Sheet → onEditTrigger prices them → poll picks them up.
+function startPolling(){
+  if(pollTimer) return;
+  setPollBar(true,'Checking for QR Robot scans…');
+  doPoll();
+  pollTimer=setInterval(doPoll, POLL_MS);
+}
+function stopPolling(){
+  if(pollTimer){ clearInterval(pollTimer); pollTimer=null; }
+  setPollBar(false,'');
+}
+function setPollBar(show,msg){
+  var bar=document.getElementById('poll-bar');
+  var stat=document.getElementById('poll-status');
+  if(!bar) return;
+  bar.className=show?'poll-bar':'poll-bar hidden';
+  if(stat&&msg) stat.textContent=msg;
+}
+// ISBNs currently being auto-looked-up so we don't double-trigger
+var _lookingUp = {};
+
+function doPoll(){
+  var scriptUrl=localStorage.getItem(SCRIPT_URL_KEY)||'';
+  if(!scriptUrl) return;
+  // Known = fully priced books AND pending placeholders (don't re-add either)
+  var knownIsbns=TODAY_SCANS.map(function(b){return b.isbn;}).filter(Boolean).join(',');
+  jsonpRequest(scriptUrl,{action:'pollNew',n:'40',known:knownIsbns},
+    function(data){
+      var books=data.books||[];
+      var pending=data.pending||[]; // unpriced ISBNs QR Robot wrote but GAS hasn't finished
+      var added=0;
+
+      // 1. Add fully-priced books from sheet
+      books.forEach(function(raw){
+        var b=norm(raw);
+        if(!b.isbn||b.isbn.length<10) return;
+        if(!b.title&&!b.bs1v&&!b.finalCall) return;
+        var existing=TODAY_SCANS.findIndex(function(x){return x.isbn===b.isbn;});
+        if(existing>=0){
+          // Replace placeholder with real data
+          TODAY_SCANS[existing]=b;
+          saveTodayScans(TODAY_SCANS);
+          delete _lookingUp[b.isbn];
+          if(curTab==='today') renderTodayScans();
+        } else {
+          addToTodayScans(b); added++;
+        }
+      });
+
+      // 2. Show placeholder cards for pending ISBNs, then auto-lookup
+      pending.forEach(function(isbn){
+        isbn=String(isbn).replace(/\D/g,'');
+        if(!isbn||isbn.length<10) return;
+        // Already have it (priced or placeholder)?
+        if(TODAY_SCANS.some(function(x){return x.isbn===isbn;})) return;
+        // Add placeholder
+        var placeholder={
+          isbn:isbn, title:'⏳ Pricing…', author:'', binding:'',
+          bs1p:0,bs1v:'',bs2p:0,bs2v:'',bs3p:0,bs3v:'',
+          bsCount:0,amazon:0,rank:0,azSellers:0,bsWeeks:0,
+          bsBestMax:0,bsWorstMax:0,bsWavg:0,bsTrend:'',bsScore:'',
+          bsBestDate:'',bsWorstDate:'',abeUsed:0,abeUsedCt:0,abeNew:0,
+          ebayLow:0,ebayMed:0,ebayN:0,ebayNet:0,
+          finalCall:'',ebay:false,status:'',offer:0,
+          cover:'https://pictures.abebooks.com/isbn/'+isbn+'-us-300.jpg',
+          tbPrice:0, _pending:true
+        };
+        addToTodayScans(placeholder);
+        added++;
+        // Auto-lookup this ISBN so the real data fills in
+        if(!_lookingUp[isbn]){
+          _lookingUp[isbn]=true;
+          autoLookup(isbn);
+        }
+      });
+
+      var t=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+      setPollBar(true,'🟢 Live · last checked '+t+(added?' · +'+added+' new':''));
+    },
+    function(){ setPollBar(true,'🟡 Live · poll failed, retrying…'); },
+    10000
+  );
+}
+
+// Auto-lookup a single ISBN in the background (no UI spinner — just update when done)
+function autoLookup(isbn){
+  var scriptUrl=localStorage.getItem(SCRIPT_URL_KEY)||'';
+  if(!scriptUrl){ delete _lookingUp[isbn]; return; }
+  jsonpRequest(scriptUrl,{action:'lookup',isbn:isbn},
+    function(data){
+      delete _lookingUp[isbn];
+      if(data.error||!data.book) return;
+      var b=norm(data.book);
+      if(!b.isbn||b.isbn.length<10) return;
+      // Replace placeholder in TODAY_SCANS
+      var idx=TODAY_SCANS.findIndex(function(x){return x.isbn===b.isbn;});
+      if(idx>=0){ TODAY_SCANS[idx]=b; }
+      else { TODAY_SCANS.unshift(b); }
+      saveTodayScans(TODAY_SCANS);
+      refreshTodayTabLabel();
+      if(curTab==='today') renderTodayScans();
+    },
+    function(){ delete _lookingUp[isbn]; },
+    40000  // lookup can take up to 30s, give 40s
+  );
+}
+
+// ── Today's Scans ────────────────────────────────────────────────────────────
+function todayKey(){
+  var d=new Date();
+  return STORE_PREFIX+'today_'+d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+}
+function loadTodayScans(){
+  try{return JSON.parse(localStorage.getItem(todayKey())||'[]');}catch(e){return [];}
+}
+function saveTodayScans(arr){
+  try{localStorage.setItem(todayKey(),JSON.stringify(arr));}catch(e){}
+}
+function addToTodayScans(b){
+  var arr=loadTodayScans();
+  var idx=arr.findIndex(function(x){return x.isbn===b.isbn;});
+  if(idx>=0) arr[idx]=b; else arr.unshift(b);
+  saveTodayScans(arr);
+  TODAY_SCANS=arr;
+  refreshTodayTabLabel();
+  updateTodayPickSection();
+  if(curTab==='today') renderTodayScans();
+}
+function refreshTodayTabLabel(){
+  var el=document.getElementById('today-tab-label');
+  if(el) el.textContent='📅 TODAY'+(TODAY_SCANS.length?' ('+TODAY_SCANS.length+')':'');
+}
+function updateTodayPickSection(){
+  var el=document.getElementById('today-pick-wrap');
+  if(!el) return;
+  var arr=loadTodayScans();
+  if(!arr.length){el.style.display='none';return;}
+  el.style.display='';
+  var total=arr.reduce(function(s,b){return s+(b.offer||0);},0);
+  el.innerHTML='<div class="pick-label">TODAY\'S SCANS</div>'+
+    '<div class="haul-list" style="margin-bottom:12px">'+
+      '<div class="haul-item" onclick="loadTodayAsHaul()">'+
+        '<span style="font-size:18px;margin-right:10px">📅</span>'+
+        '<div class="haul-name">Today\'s Scans</div>'+
+        '<div class="haul-meta"><b>'+arr.length+'</b> books&nbsp;·&nbsp;<b>$'+total.toFixed(2)+'</b></div>'+
+        '<span class="haul-arrow">›</span>'+
+      '</div>'+
+    '</div>';
+}
+function loadTodayAsHaul(){
+  var arr=loadTodayScans();
+  if(!arr.length) return;
+  BOOKS=applyStatuses(arr.slice());
+  visibleBooks=BOOKS.slice();
+  TODAY_SCANS=arr;
+  curHaulName="Today's Scans";
+  showApp("Today's Scans");
+  // Switch to TODAY tab
+  document.querySelectorAll('.app-tab').forEach(function(t){t.classList.remove('active');});
+  var todayTabEl=document.getElementById('today-tab-label');
+  if(todayTabEl) todayTabEl.classList.add('active');
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  document.getElementById('page-today').classList.add('active');
+  document.getElementById('scans-ctrl').style.display='none';
+  curTab='today';
+  renderTodayScans();
+}
+function setTodaySort(s,btn){
+  todaySort=s;
+  document.querySelectorAll('#page-today .sort-btns button').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  renderTodayScans();
+}
+
+function renderTodayScans(){
+  var arr=(TODAY_SCANS.length?TODAY_SCANS:loadTodayScans()).slice();
+  TODAY_SCANS=arr.length?arr:TODAY_SCANS;
+
+  // Sort
+  var callOrder={'DIRECT BUYBACK':0,'LIST EBAY':1,'LIST EBAY (ABE)':2,'VENDOR BUNDLE':3,'BORDERLINE':4,'SKIP':5};
+  if(todaySort==='val'){
+    arr.sort(function(a,b){ return (b.offer||0)-(a.offer||0); });
+  } else if(todaySort==='call'){
+    arr.sort(function(a,b){
+      return (callOrder[getEffectiveCall(a)]||9)-(callOrder[getEffectiveCall(b)]||9);
+    });
+  }
+  // 'new' = natural order (unshift adds newest first, so arr[0] is newest)
+
+  var countEl=document.getElementById('today-count');
+  if(countEl) countEl.textContent=arr.length+' scanned today';
+
+  var el=document.getElementById('today-list');
+  if(!el) return;
+  if(!arr.length){
+    el.innerHTML='<div class="empty">📭<br>No books scanned today<br><span style="font-size:12px;color:var(--muted)">Tap SCAN / ADD or use QR Robot</span></div>';
+    return;
+  }
+  var html='';
+  for(var i=0;i<arr.length;i++){
+    var b=arr[i];
+    // Placeholder card for pending/unpriced books
+    if(b._pending){
+      html+='<div class="book-card" style="border-left:4px solid #555;opacity:0.7">'+
+        '<div class="cover"><div class="cover-ph"><span class="spinner"></span></div></div>'+
+        '<div class="binfo">'+
+          '<div class="btitle" style="color:var(--muted)">Pricing…</div>'+
+          '<div class="bauthor" style="font-family:\'DM Mono\',monospace;font-size:10px">'+b.isbn+'</div>'+
+          '<div class="bmeta"><span class="vbadge b-default">⏳ Looking up</span></div>'+
+        '</div></div>';
+      continue;
+    }
+    var ec=getEffectiveCall(b);
+    var bdg=cardBadge(b),lbl=cardLabel(b);
+    var sc=b.bsScore;
+    var scBadge=sc&&sc!=='NO DATA'?'<span class="score-badge-sm '+scoreClass(sc)+'" style="font-size:9px;padding:2px 5px;border-radius:3px;font-family:\'DM Mono\',monospace">'+sc+'</span>':'';
+    var cov='<img src="'+b.cover+'" alt="" loading="lazy" onerror="this.parentNode.innerHTML=\'<div class=cover-ph>📚</div>\'">';
+    var strip=ec==='DIRECT BUYBACK'?'#5AFFA8':ec==='LIST EBAY'||ec==='LIST EBAY (ABE)'?'#F0CC55':ec==='VENDOR BUNDLE'?'#FF8866':ec==='BORDERLINE'?'#FFAA55':'#FF7777';
+    html+='<div class="book-card" style="border-left:4px solid '+strip+'" onclick="openTodayDrawer('+i+')">'+
+      '<div class="cover">'+cov+'</div>'+
+      '<div class="binfo">'+
+        '<div class="btitle">'+(b.title||'ISBN '+b.isbn)+'</div>'+
+        '<div class="bauthor">'+(b.author||'—')+'</div>'+
+        '<div class="bmeta">'+
+          '<span class="'+bdg+'">'+lbl+'</span>'+
+          (b.offer?'<span class="offer">'+fmt(b.offer)+'</span>':'<span class="offer zero">no offer</span>')+
+          scBadge+rdot(b.rank)+
+        '</div>'+
+      '</div></div>';
+  }
+  el.innerHTML=html;
+}
+function openTodayDrawer(idx){
+  var b=TODAY_SCANS[idx];if(!b)return;
+  if(b._pending)return; // placeholder — not priced yet
+  document.getElementById('dc').innerHTML=
+    '<div style="padding:12px 16px 4px">'+
+      '<div class="dcov"><img src="'+b.cover+'" alt="" onerror="this.src=\'\'"></div>'+
+      '<div class="dtitle">'+(b.title||'ISBN '+b.isbn)+'</div>'+
+      '<div class="dauthor">'+(b.author||'—')+(b.binding?' · '+b.binding:'')+'</div>'+
+    '</div>'+
+    '<div style="padding:0 16px 24px">'+
+      buildDrawerHTML(b)+
+      '<div style="text-align:center;margin-top:10px">'+
+        '<a href="https://www.ebay.com/sch/i.html?_nkw='+encodeURIComponent(b.isbn)+'&_sacat=267&LH_Complete=1&LH_Sold=1" target="_blank" class="ebay-link">🔍 eBay Sold Comps ↗</a>'+
+      '</div>'+
+    '</div>';
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+var st2;
+document.getElementById('search').addEventListener('input',function(e){
+  clearTimeout(st2);st2=setTimeout(function(){curSearch=e.target.value;renderBooks();},150);
+});
+var tsy=0;
+document.getElementById('drawer').addEventListener('touchstart',function(e){tsy=e.touches[0].clientY;},{passive:true});
+document.getElementById('drawer').addEventListener('touchend',function(e){if(e.changedTouches[0].clientY-tsy>60)closeDrawer();},{passive:true});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INLINE EAN-13 DECODER — pure JS, zero dependencies, works on iPhone Safari
+// from local file with no internet connection.
+// ISBN-13 barcodes are standard EAN-13 starting with 978 or 979.
+// ═══════════════════════════════════════════════════════════════════════════════
+var EAN13 = (function(){
+  // 7-module patterns per digit (1=black, 0=white)
+  var L=['0001101','0011001','0010011','0111101','0100011','0110001','0101111','0111011','0110111','0001011'];
+  var G=['0100111','0110011','0011011','0100001','0011101','0111001','0000101','0010001','0001001','0010111'];
+  var R=['1110010','1100110','1101100','1000010','1011100','1001110','1010000','1000100','1001000','1110100'];
+  // First digit encoded by the parity pattern of the left 6 digits (L=even parity, G=odd)
+  var PARITY={'LLLLLL':0,'LLGLGG':1,'LLGGLG':2,'LLGGGL':3,'LGLLGG':4,'LGGLLG':5,'LGGGLL':6,'LGLGLG':7,'LGLGGL':8,'LGGLGL':9};
+  // Build reverse-lookup maps
+  var LM={},GM={},RM={};
+  for(var i=0;i<10;i++){LM[L[i]]=i;GM[G[i]]=i;RM[R[i]]=i;}
+
+  // Binarise a row of pixels using Otsu's method
+  function binarise(px, w){
+    var hist=new Array(256).fill(0);
+    for(var i=0;i<w;i++){ var g=Math.round(.299*px[i*4]+.587*px[i*4+1]+.114*px[i*4+2]); hist[g]++; }
+    var sum=0; for(var i=0;i<256;i++) sum+=i*hist[i];
+    var sumB=0,wB=0,maxV=0,thresh=128;
+    for(var t=0;t<256;t++){
+      wB+=hist[t]; var wF=w-wB; if(!wB||!wF) continue;
+      sumB+=t*hist[t];
+      var mB=sumB/wB,mF=(sum-sumB)/wF,bv=wB*wF*(mB-mF)*(mB-mF);
+      if(bv>maxV){maxV=bv;thresh=t;}
+    }
+    var bits=[];
+    for(var i=0;i<w;i++){ var g=Math.round(.299*px[i*4]+.587*px[i*4+1]+.114*px[i*4+2]); bits.push(g<=thresh?1:0); }
+    return bits;
+  }
+
+  // Convert bits to run-length array [{v,n}]
+  function runs(bits){
+    if(!bits.length) return [];
+    var out=[],cv=bits[0],cn=1;
+    for(var i=1;i<bits.length;i++){if(bits[i]===cv)cn++;else{out.push({v:cv,n:cn});cv=bits[i];cn=1;}}
+    out.push({v:cv,n:cn}); return out;
+  }
+
+  // Read `mods` modules starting at run index ri, returns pattern string
+  function readMods(rl, ri, mods, unit){
+    var p='';
+    while(mods>0&&ri<rl.length){
+      var n=Math.max(1,Math.min(4,Math.round(rl[ri].n/unit)));
+      var take=Math.min(n,mods);
+      p+=(rl[ri].v===1?'1':'0').repeat(take);
+      mods-=take; ri++;
+    }
+    return {p:p.substring(0,7).padEnd(7,'0'), next:ri};
+  }
+
+  function tryRow(bits){
+    var rl=runs(bits);
+    // Try every possible start position looking for 101 guard
+    for(var si=0;si<rl.length-29;si++){
+      if(rl[si].v!==1) continue;
+      var u=rl[si].n;
+      // Start guard: runs of approximate width u,u,u (black,white,black = 101)
+      if(rl[si+1].v!==0||Math.abs(rl[si+1].n-u)>u*.7) continue;
+      if(rl[si+2].v!==1||Math.abs(rl[si+2].n-u)>u*.7) continue;
+
+      var digits=[], parity='', ri=si+3;
+      var ok=true;
+      // Left 6 digits
+      for(var d=0;d<6;d++){
+        var r=readMods(rl,ri,7,u); ri=r.next; var p=r.p;
+        if(LM[p]!==undefined){digits.push(LM[p]);parity+='L';}
+        else if(GM[p]!==undefined){digits.push(GM[p]);parity+='G';}
+        else{ok=false;break;}
+      }
+      if(!ok) continue;
+      // Middle guard: 01010 = 5 modules, skip
+      ri=readMods(rl,ri,5,u).next;
+      // Right 6 digits
+      for(var d=0;d<6;d++){
+        var r=readMods(rl,ri,7,u); ri=r.next; var p=r.p;
+        if(RM[p]!==undefined) digits.push(RM[p]);
+        else{ok=false;break;}
+      }
+      if(!ok||digits.length!==12) continue;
+      // Recover first digit from parity
+      var first=PARITY[parity]; if(first===undefined) continue;
+      var all=[first].concat(digits);
+      // Verify checksum
+      var s=0; for(var i=0;i<12;i++) s+=all[i]*(i%2===0?1:3);
+      if((10-(s%10))%10!==all[12]) continue;
+      return all.join('');
+    }
+    return null;
+  }
+
+  // Decode from a <video> element using canvas
+  // Returns ISBN string or null
+  var _canvas=null, _ctx=null;
+  function decode(video){
+    var vw=video.videoWidth,vh=video.videoHeight;
+    if(!vw||!vh) return null;
+    if(!_canvas){_canvas=document.createElement('canvas');_ctx=_canvas.getContext('2d');}
+    _canvas.width=vw; _canvas.height=1;
+    var rows=[.50,.45,.55,.40,.60,.35,.65];
+    for(var r=0;r<rows.length;r++){
+      _ctx.drawImage(video,0,Math.floor(vh*rows[r]),vw,1,0,0,vw,1);
+      var px=_ctx.getImageData(0,0,vw,1).data;
+      var bits=binarise(px,vw);
+      var res=tryRow(bits)||(tryRow(bits.slice().reverse()));
+      if(res) return res;
+    }
+    return null;
+  }
+
+  return {decode:decode, tryRow:tryRow};
+})();
+
+// ── Handheld scanner auto-detect ──────────────────────────────────────────────
+// USB/Bluetooth scanners (HID keyboard mode) fire all 13 digits in <60ms
+// then send Enter. We detect that timing and auto-trigger so you just scan.
+// Works with any scanner: Symbol, Zebra, Honeywell, Socket Mobile, etc.
+var scannerTimer=null;
+
+function initScannerDetect(){
+  var isbnEl=document.getElementById('add-isbn');
+  var lastKey=0;
+  isbnEl.addEventListener('keydown',function(e){
+    if(e.key==='Enter'||e.keyCode===13){lookupISBN();return;}
+    if(!/^\d$/.test(e.key)) return;
+    var now=Date.now();
+    var gap=now-lastKey; lastKey=now;
+    clearTimeout(scannerTimer);
+    // If keys arrive very fast (scanner) and we have a full ISBN — auto-fire
+    if(gap<50){
+      scannerTimer=setTimeout(function(){
+        var v=isbnEl.value.replace(/\D/g,'');
+        if(v.length===13||v.length===10) lookupISBN();
+      },60);
+    }
+  });
+}
+
+// ── Camera barcode scanning — file input capture trick ────────────────────────
+// Uses <input type="file" capture="environment"> which opens the native iPhone
+// camera without needing HTTPS or getUserMedia permissions.
+// Works from local file:// on ANY iPhone browser including Documents app.
+// After photo taken, we draw to canvas and run our inline EAN-13 decoder
+// across multiple horizontal scan lines to find the barcode.
+
+// ── Live camera scanner — getUserMedia (works on GitHub Pages / HTTPS) ─────────
+// v20 improvement: scan every 2px through crop + try 4 contrast thresholds per line
+// This dramatically increases detection on barcodes in tricky lighting or angles.
+var camActive=false, camStream=null, camRAF=null, torchOn=false;
+
+function toggleTorch(){
+  var track = camStream ? camStream.getVideoTracks()[0] : null;
+  if(!track) return;
+  torchOn = !torchOn;
+  track.applyConstraints({ advanced: [{ torch: torchOn }] }).catch(function(){
+    torchOn = !torchOn; // unsupported — revert
+  });
+  var btn = document.getElementById('torch-btn');
+  if(btn) btn.style.background = torchOn ? 'rgba(255,220,50,0.75)' : 'rgba(0,0,0,0.55)';
+}
+
+function toggleCamera(){
+  if(camActive){ stopCamera(); return; }
+  if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia){
+    startLiveCamera();
+  } else {
+    document.getElementById('cam-file-input').value='';
+    document.getElementById('cam-file-input').click();
+  }
+}
+
+function startLiveCamera(){
+  var view = document.getElementById('cam-view');
+  var stat = document.getElementById('cam-status');
+  view.style.display = 'block';
+  document.getElementById('cam-btn').className = 'cam-btn active';
+  stat.textContent = 'Starting camera…';
+
+  navigator.mediaDevices.getUserMedia({
+    video:{ facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720} }
+  }).then(function(stream){
+    camStream = stream; camActive = true;
+    // Show torch button only if track supports torch
+    var track = stream.getVideoTracks()[0];
+    if(track){
+      var caps = track.getCapabilities ? track.getCapabilities() : {};
+      if(caps.torch){
+        var tb = document.getElementById('torch-btn');
+        if(tb) tb.style.display = 'block';
+      }
+    }
+    var video = document.getElementById('cam-video');
+    video.srcObject = stream;
+    video.play().then(function(){
+      stat.textContent = 'Point barcode inside the box';
+      camRAF = requestAnimationFrame(scanFrame);
+    });
+  }).catch(function(){
+    stopCamera();
+    document.getElementById('cam-file-input').value='';
+    document.getElementById('cam-file-input').click();
+  });
+}
+
+// Offscreen canvas for cropped decoding
+var _scanCanvas=null, _scanCtx=null;
+
+function scanFrame(){
+  if(!camActive) return;
+  var video = document.getElementById('cam-video');
+  if(video.readyState < video.HAVE_ENOUGH_DATA){ camRAF=requestAnimationFrame(scanFrame); return; }
+
+  var vw=video.videoWidth, vh=video.videoHeight;
+  if(!vw||!vh){ camRAF=requestAnimationFrame(scanFrame); return; }
+
+  // Crop: 5% inset horizontally (wider = catches barcode at any horizontal position)
+  // 90% wide, 32% tall centred — slightly taller than v18 for more coverage
+  var PROC_W = 800;  // wider canvas = more pixel detail for narrow barcodes
+  var cropX = Math.round(vw * 0.05);
+  var cropW = Math.round(vw * 0.90);
+  var cropH = Math.round(vh * 0.32);
+  var cropY = Math.round(vh * 0.34);
+  var procH = Math.round(cropH * (PROC_W / cropW));
+
+  if(!_scanCanvas){ _scanCanvas=document.createElement('canvas'); _scanCtx=_scanCanvas.getContext('2d'); }
+  _scanCanvas.width=PROC_W; _scanCanvas.height=procH;
+  _scanCtx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, PROC_W, procH);
+
+  // KEY IMPROVEMENT: scan every 2px + try 4 thresholds per line
+  // Instead of 5 fixed lines + 1 threshold = 5 attempts,
+  // we now do ~procH/2 lines × 4 thresholds ≈ 200+ attempts per frame.
+  // Each attempt is still fast (pure bit-pattern matching on 800px).
+  var THRESHOLDS = [null, 90, 130, 170]; // null = Otsu auto; others = fixed
+  var isbn = null;
+
+  outer:
+  for(var y=1; y<procH-1; y+=2){
+    var px = _scanCtx.getImageData(0, y, PROC_W, 1).data;
+    for(var ti=0; ti<THRESHOLDS.length; ti++){
+      var bits = binariseRow(px, PROC_W, THRESHOLDS[ti]);
+      isbn = EAN13.tryRow(bits) || EAN13.tryRow(bits.slice().reverse());
+      if(isbn) break outer;
+    }
+  }
+
+  if(isbn){
+    document.getElementById('add-isbn').value = isbn;
+    document.getElementById('cam-status').textContent = '✓ ' + isbn;
+    document.getElementById('cam-btn').style.background = 'rgba(74,232,158,0.25)';
+    camActive = false;
+    if(navigator.vibrate) navigator.vibrate(80);
+    setTimeout(function(){ stopCamera(); lookupISBN(); }, 250);
+    return;
+  }
+  camRAF = requestAnimationFrame(scanFrame);
+}
+
+function stopCamera(){
+  camActive = false; torchOn = false;
+  var tb = document.getElementById('torch-btn');
+  if(tb){ tb.style.display='none'; tb.style.background='rgba(0,0,0,0.55)'; }
+  if(camRAF){ cancelAnimationFrame(camRAF); camRAF=null; }
+  if(camStream){ camStream.getTracks().forEach(function(t){ t.stop(); }); camStream=null; }
+  var video=document.getElementById('cam-video');
+  if(video&&video.srcObject){ video.srcObject=null; }
+  var view=document.getElementById('cam-view'); if(view) view.style.display='none';
+  var btn=document.getElementById('cam-btn');
+  if(btn){ btn.className='cam-btn'; btn.style.background=''; }
+}
+
+// ── Photo fallback (file input) — still works on file:// ─────────────────────
+function setCamStatus(msg, color){
+  var bar = document.getElementById('cam-status-bar');
+  bar.style.display = msg ? 'block' : 'none';
+  bar.style.color = color || 'var(--muted)';
+  bar.textContent = msg;
+}
+
+document.getElementById('cam-file-input').addEventListener('change', function(){
+  var file = this.files && this.files[0];
+  if(!file) return;
+  setCamStatus('🔍 Reading barcode…');
+  var reader = new FileReader();
+  reader.onload = function(e){
+    var img = new Image();
+    img.onload = function(){
+      var found = decodeImageEAN13(img);
+      if(found){
+        document.getElementById('add-isbn').value = found;
+        setCamStatus('✓ ' + found, 'var(--green)');
+        setTimeout(function(){ setCamStatus(''); }, 2000);
+        lookupISBN();
+      } else {
+        setCamStatus('❌ No barcode found — zoom into the barcode and try again', 'var(--yellow)');
+        setTimeout(function(){ setCamStatus(''); }, 4000);
+      }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+function decodeImageEAN13(img){
+  var canvas = document.getElementById('cam-canvas');
+  var MAX_W = 1200;
+  var scale = img.width > MAX_W ? MAX_W / img.width : 1;
+  var w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+  canvas.width = w; canvas.height = h;
+  var ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, w, h);
+  var offsets = [0,-0.06,0.06,-0.12,0.12,-0.18,0.18,-0.25,0.25,-0.32,0.32];
+  for(var i=0;i<offsets.length;i++){
+    var y = Math.round(h*(0.5+offsets[i]));
+    if(y<0||y>=h) continue;
+    var px = ctx.getImageData(0,y,w,1).data;
+    var result = EAN13.tryRow(binariseRow(px,w));
+    if(result) return result;
+  }
+  return null;
+}
+
+// binariseRow: convert RGBA pixel row to bit array.
+// fixedThresh: if provided (0-255), skip Otsu and use that threshold directly.
+// Trying multiple fixed thresholds per line catches barcodes Otsu misses.
+function binariseRow(px, w, fixedThresh){
+  var thresh;
+  if(fixedThresh !== undefined && fixedThresh !== null){
+    thresh = fixedThresh;
+  } else {
+    // Otsu's method
+    var hist=new Array(256).fill(0);
+    for(var i=0;i<w;i++){ var g=Math.round(.299*px[i*4]+.587*px[i*4+1]+.114*px[i*4+2]); hist[g]++; }
+    var sum=0; for(var i=0;i<256;i++) sum+=i*hist[i];
+    var sumB=0,wB=0,maxV=0; thresh=128;
+    for(var t=0;t<256;t++){
+      wB+=hist[t]; var wF=w-wB; if(!wB||!wF) continue;
+      sumB+=t*hist[t];
+      var mB=sumB/wB,mF=(sum-sumB)/wF,bv=wB*wF*(mB-mF)*(mB-mF);
+      if(bv>maxV){maxV=bv;thresh=t;}
+    }
+  }
+  var bits=[];
+  for(var i=0;i<w;i++){ var g=Math.round(.299*px[i*4]+.587*px[i*4+1]+.114*px[i*4+2]); bits.push(g<=thresh?1:0); }
+  return bits;
+}
+
+function closeAddModal(){
+  stopCamera();
+  setCamStatus('');
+  document.getElementById('cam-file-input').value='';
+  document.getElementById('add-modal').className='modal-overlay';
+}
+
+// ── Create New Scanning Session ───────────────────────────────────────────────
+// User taps "Start New Scanning Session" → names it → opens app in TODAY tab
+function createNewHaul(){
+  var d = new Date();
+  var mo = d.getMonth()+1, day = d.getDate(), yr = d.getFullYear();
+  // Find next session number for today
+  var baseKey = mo+'/'+day+'/'+yr+' Scan';
+  var existing = getSavedHauls().map(function(h){return h.name;});
+  var n = 1;
+  while(existing.indexOf(baseKey+' '+n) > -1) n++;
+  var defaultName = baseKey + (n>1?' '+n:'');
+  var name = (prompt('Name this scanning session:', defaultName) || '').trim();
+  if(!name) return;
+
+  BOOKS = []; TB_PRICES = {}; curHaulName = name;
+  saveHaul(name, []);
+  showApp(name);
+  // Auto-switch to TODAY tab and start polling for QR Robot
+  var todayTabEl = document.getElementById('today-tab-label');
+  if(todayTabEl) switchTab('today', todayTabEl);
+  startPolling();
+  // Auto-open scan modal so they can start immediately
+  openAddModal();
+}
+
+TODAY_SCANS = loadTodayScans();
+loadHaulList();
+updateTodayPickSection();
+refreshTodayTabLabel();
+initSheetUrl();
+initScannerDetect();
+</script>
+</body>
+</html>
