@@ -331,8 +331,11 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',-apple-system,Bli
     </div>
   </div>
 
-  <!-- Session date picker — populated by loadSessions() -->
-  <div class="session-bar" id="session-bar" style="display:none"></div>
+  <!-- Session picker -->
+  <div id="session-bar" style="display:none;padding:8px 14px;background:var(--s1);border-bottom:2px solid var(--border)">
+    <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Scanning Session</div>
+    <select id="session-select" onchange="switchSession(this.value)" style="width:100%;padding:10px 12px;border-radius:10px;background:var(--s2);color:var(--text);border:2px solid var(--accent);font-size:14px;font-weight:700;font-family:'Syne',sans-serif;appearance:none;-webkit-appearance:none;cursor:pointer"></select>
+  </div>
 
   <div id="scans-ctrl" class="scans-ctrl">
     <div class="search-wrap">
@@ -1224,18 +1227,18 @@ function loadSessionBooks(url, sessionDate, statusEl){
 
 function renderSessionBar(){
   var bar = document.getElementById('session-bar');
+  var sel = document.getElementById('session-select');
   if(!_sessions.length){ bar.style.display='none'; return; }
-  bar.style.display='flex';
+  bar.style.display='block';
   var html = '';
   _sessions.forEach(function(s){
-    var isActive = s.date === curSession;
-    var label = s.isToday ? 'Today' : formatSessionDate(s.date);
-    var pendingTxt = (s.count - s.priced) > 0 ? '<span class="session-pending">+' + (s.count-s.priced) + ' pricing</span>' : '';
-    var liveDot = s.isToday ? '<div class="session-live-dot"></div>' : '';
-    html += '<button class="session-chip'+(isActive?' active':'')+'" onclick="switchSession(\''+s.date+'\')">' +
-      liveDot + label + ' <span class="sc-badge">'+s.count+'</span>' + pendingTxt + '</button>';
+    var label = s.isToday ? '📅 Today — ' + s.date : '📦 ' + formatSessionDate(s.date) + ' — ' + s.date;
+    var pending = s.count - s.priced;
+    label += '  (' + s.count + ' books' + (pending > 0 ? ', ' + pending + ' pricing' : '') + ')';
+    if(s.date === 'legacy') label = '📋 Legacy sheet (' + s.count + ' books)';
+    html += '<option value="'+s.date+'"'+(s.date===curSession?' selected':'')+'>'+label+'</option>';
   });
-  bar.innerHTML = html;
+  sel.innerHTML = html;
 }
 
 function formatSessionDate(dateStr){
