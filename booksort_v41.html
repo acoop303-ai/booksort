@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>BookSort v40</title>
+<title>BookSort v41</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -1949,18 +1949,31 @@ function openTodayDrawer(idx){
 // ── TB Sync Modal ─────────────────────────────────────────────────────────────
 
 function buildBookmarklet(gasUrl) {
-  // Builds the bookmarklet JS. Uses XHR (not fetch) because TB patches window.fetch.
+  // Uses XHR for TB calls (same-origin on thriftbooks.com — works fine).
+  // Uses JSONP script-tag injection for the GAS writeback to bypass CORS preflight.
+  // The old approach (XHR GET to GAS) silently failed because GAS redirects to
+  // script.googleusercontent.com and that domain blocks cross-origin reads.
   var code = '(function(){' +
     'var G="' + gasUrl + '";' +
+    // XHR helper for same-origin TB calls
     'function xhr(m,u,h,b){return new Promise(function(r){' +
       'var x=new XMLHttpRequest();x.open(m,u,true);x.withCredentials=true;' +
       'if(h)Object.keys(h).forEach(function(k){x.setRequestHeader(k,h[k]);});' +
       'x.onload=function(){try{r(JSON.parse(x.responseText));}catch(e){r(null);}};' +
       'x.onerror=function(){r(null);};x.send(b||null);' +
     '});}' +
+    // JSONP helper — script tags bypass CORS entirely
+    'function jsonp(url){return new Promise(function(r){' +
+      'var cb="_tb"+Date.now();' +
+      'window[cb]=function(d){delete window[cb];s.parentNode&&s.parentNode.removeChild(s);r(d);};' +
+      'var s=document.createElement("script");' +
+      's.src=url+(url.indexOf("?")>=0?"&":"?")+"callback="+cb;' +
+      's.onerror=function(){r(null);};' +
+      'document.head.appendChild(s);' +
+    '});}' +
     '(async function(){' +
       'try{' +
-        'var d=await xhr("GET",G+"?action=get_missing_tb",null,null);' +
+        'var d=await jsonp(G+"?action=get_missing_tb");' +
         'if(!d||!d.isbns||!d.isbns.length){alert("TB Sync: all books already priced!");return;}' +
         'var isbns=d.isbns;' +
         'var c=await xhr("GET","/tb-api/csrf/GetToken",null,null);' +
@@ -1972,7 +1985,8 @@ function buildBookmarklet(gasUrl) {
           'if(q)((q.sellListItems)||[]).forEach(function(it){if(it.sellPrice>0)res[it.userEnteredIdentifier]=[it.sellPrice,it.wantCount||0,true];});' +
         '}' +
         'var n=Object.keys(res).length;' +
-        'if(n){await xhr("GET",G+"?action=save_tb&data="+encodeURIComponent(JSON.stringify(res)),null,null);}' +
+        // Save via JSONP script tag — bypasses CORS redirect block
+        'if(n){await jsonp(G+"?action=save_tb&data="+encodeURIComponent(JSON.stringify(res)));}' +
         'alert("TB Sync done! "+n+" prices saved ("+isbns.length+" books checked).");' +
       '}catch(e){alert("TB Sync error: "+e.message);}' +
     '})();' +
