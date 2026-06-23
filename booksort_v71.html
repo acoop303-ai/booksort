@@ -10,96 +10,160 @@
   --bg:#0F0F0F;--s1:#1A1A1A;--s2:#242424;--s3:#2E2E2E;
   --text:#F0EDE8;--muted:#777;--border:#2E2E2E;
   --accent:#FF6B35;--green:#4AE89E;--blue:#4A9EE8;--yellow:#E8C44A;--purple:#B47AE8;--red:#E87A7A;
+  --booksrun:#4A9EE8;--thriftbooks:#B47AE8;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Syne',-apple-system,sans-serif}
-body{display:flex;flex-direction:column}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Syne',-apple-system,sans-serif;display:flex;flex-direction:column}
 
 /* ── HEADER ── */
-.hdr{background:var(--bg);border-bottom:1px solid var(--border);flex-shrink:0;padding:11px 16px 0}
-.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
-.logo{font-size:20px;font-weight:800;letter-spacing:-0.5px}
+.hdr{background:var(--bg);border-bottom:1px solid var(--border);flex-shrink:0}
+.hdr-top{display:flex;align-items:center;gap:10px;padding:11px 16px 0}
+.logo{font-size:19px;font-weight:800;letter-spacing:-0.5px;flex:1}
 .logo span{color:var(--accent)}
-.hdr-meta{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
-.hdr-meta b{color:var(--text)}
-.reload-btn{background:var(--s2);border:1px solid var(--border);color:var(--text);
+.hdr-stats{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
+.hdr-stats b{color:var(--text)}
+.hdr-btn{background:var(--s2);border:1px solid var(--border);color:var(--text);
   font-family:'Syne',sans-serif;font-size:11px;font-weight:700;padding:5px 10px;
-  border-radius:6px;cursor:pointer;transition:background 0.1s}
-.reload-btn:hover{background:var(--s3)}
+  border-radius:6px;cursor:pointer;white-space:nowrap}
+.hdr-btn:hover{background:var(--s3)}
 
 /* ── CONTROLS ── */
-.ctrl{flex-shrink:0;padding:8px 16px 0}
-.search-row{display:flex;gap:8px;margin-bottom:7px}
-.search-wrap{flex:1;position:relative}
+.ctrl{flex-shrink:0}
+.search-wrap{position:relative;padding:9px 16px 0}
 .search-wrap input{width:100%;background:var(--s1);border:1px solid var(--border);border-radius:8px;
-  padding:8px 12px;color:var(--text);font-family:'Syne',sans-serif;font-size:13px;outline:none}
+  padding:8px 12px;color:var(--text);font-family:'Syne',sans-serif;font-size:13px;outline:none;
+  transition:border-color 0.15s}
 .search-wrap input:focus{border-color:var(--accent)}
 .search-wrap input::placeholder{color:var(--muted)}
-.sort-btn{background:var(--s1);border:1px solid var(--border);border-radius:8px;
-  padding:8px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;
-  cursor:pointer;white-space:nowrap;transition:border-color 0.1s}
-.sort-btn:hover{border-color:var(--accent)}
-.filters{display:flex;gap:5px;overflow-x:auto;padding-bottom:7px;scrollbar-width:none}
+.filters{display:flex;gap:5px;overflow-x:auto;padding:7px 16px;scrollbar-width:none}
 .filters::-webkit-scrollbar{display:none}
 .pill{flex-shrink:0;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;
   cursor:pointer;border:1.5px solid var(--border);background:transparent;color:var(--muted);
   white-space:nowrap;font-family:'Syne',sans-serif;transition:all 0.12s}
-.pill.active{border-color:transparent;background:var(--accent);color:#fff}
+.pill.active{border-color:transparent;color:#fff}
+.pill[data-v="ALL"].active{background:var(--accent)}
+.pill[data-v="TB"].active{background:var(--thriftbooks);color:#000}
+.pill[data-v="BR"].active{background:var(--booksrun);color:#000}
+.pill[data-v="BS"].active{background:var(--green);color:#000}
+.pill[data-v="EBAY"].active{background:var(--yellow);color:#000}
+.pill[data-v="TRASH"].active{background:var(--red);color:#fff}
+.sort-bar{display:flex;align-items:center;padding:5px 16px 6px;font-size:11px;color:var(--muted)}
+.sort-bar span{font-family:'DM Mono',monospace}
+.sort-btns{margin-left:auto;display:flex;gap:4px}
+.sort-btns button{background:var(--s1);border:1px solid var(--border);color:var(--muted);
+  font-size:11px;font-family:'Syne',sans-serif;font-weight:600;padding:3px 9px;
+  border-radius:5px;cursor:pointer;transition:all 0.1s}
+.sort-btns button.active{background:var(--s2);color:var(--text);border-color:#555}
 
-/* ── GRID ── */
-.grid-wrap{flex:1;overflow-y:auto;padding:12px 16px 80px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
-@media(max-width:480px){.grid{grid-template-columns:repeat(2,1fr)}}
-
-/* ── CARD ── */
-.card{background:var(--s1);border:1px solid var(--border);border-radius:12px;overflow:hidden;
-  display:flex;flex-direction:column;cursor:default;transition:border-color 0.15s}
-.card:hover{border-color:var(--accent)}
-.card-cover{width:100%;aspect-ratio:2/3;object-fit:cover;background:var(--s2);display:block}
-.card-cover-placeholder{width:100%;aspect-ratio:2/3;background:var(--s2);display:flex;
-  align-items:center;justify-content:center;font-size:28px;color:var(--border)}
-.card-body{padding:8px 10px 10px;display:flex;flex-direction:column;gap:4px;flex:1}
-.card-title{font-size:11px;font-weight:700;line-height:1.3;color:var(--text);
+/* ── BOOK LIST ── */
+.pages{flex:1;overflow:hidden;position:relative}
+.page{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.book-card{display:flex;gap:11px;padding:12px 16px;border-bottom:1px solid var(--border);
+  cursor:pointer;align-items:flex-start;transition:background 0.1s}
+.book-card:active,.book-card:hover{background:var(--s1)}
+.cover{flex-shrink:0;width:46px;height:62px;border-radius:4px;overflow:hidden;background:var(--s2)}
+.cover img{width:100%;height:100%;object-fit:cover;display:block}
+.cover-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:18px}
+.binfo{flex:1;min-width:0}
+.btitle{font-size:13px;font-weight:700;line-height:1.3;margin-bottom:2px;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.card-isbn{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted)}
-.card-best{display:flex;align-items:baseline;gap:4px;margin-top:2px}
-.card-best-price{font-family:'DM Mono',monospace;font-size:18px;font-weight:500;color:var(--accent)}
-.card-best-vendor{font-size:9px;color:var(--muted);font-family:'DM Mono',monospace;text-transform:uppercase}
-.card-prices{display:flex;flex-direction:column;gap:2px;margin-top:4px}
-.price-row{display:flex;justify-content:space-between;align-items:center}
-.price-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted)}
-.price-val{font-family:'DM Mono',monospace;font-size:10px;color:var(--text)}
-.price-val.green{color:var(--green)}
-.price-val.blue{color:var(--blue)}
-.price-val.purple{color:var(--purple)}
-.price-val.zero{color:var(--border)}
-.card-ebay-badge{margin-top:5px;background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.3);
-  border-radius:5px;padding:3px 6px;font-family:'DM Mono',monospace;font-size:9px;color:var(--accent)}
-.card-date{font-family:'DM Mono',monospace;font-size:8px;color:var(--muted);margin-top:4px}
+.bmeta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:3px}
+.vbadge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap;border:1px solid transparent}
+.b-tb     {background:rgba(180,122,232,.2);color:#C89AFF;border-color:rgba(180,122,232,.5)}
+.b-br     {background:rgba(74,158,232,.18);color:#66BBFF;border-color:rgba(74,158,232,.45)}
+.b-bs     {background:rgba(74,232,158,.18);color:#5AFFA8;border-color:rgba(74,232,158,.45)}
+.b-ebay   {background:rgba(232,196,74,.18);color:#F0CC55;border-color:rgba(232,196,74,.45)}
+.b-none   {background:var(--s2);color:var(--muted);border-color:var(--border)}
+.offer{font-family:'DM Mono',monospace;font-size:14px;font-weight:500}
+.offer.zero{color:var(--muted);font-size:11px}
+.amz{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)}
+.rdot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0;margin-right:2px}
+.rh{background:#FF4444}.rm{background:#FFA500}.rs{background:#888}.rc{background:#444}
+.ebay-line{font-family:'DM Mono',monospace;font-size:10px;color:var(--accent)}
+.isbn-chip{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted)}
+
+/* ── COPY BAR ── */
+.copy-isbn-bar{padding:8px 16px;border-top:1px solid var(--border);flex-shrink:0}
+.copy-isbn-btn{width:100%;padding:10px;background:var(--s2);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);font-family:'Syne',sans-serif;font-weight:700;
+  font-size:12px;cursor:pointer;transition:background 0.15s}
+.copy-isbn-btn:active,.copy-isbn-btn.copied{background:var(--green);color:#000}
 
 /* ── EMPTY / LOADING ── */
-.state-msg{display:flex;flex-direction:column;align-items:center;justify-content:center;
-  height:200px;font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);gap:8px;text-align:center}
-.spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);
-  border-radius:50%;animation:spin 0.8s linear infinite}
+.empty{padding:60px 20px;text-align:center;color:var(--muted);font-size:13px;line-height:1.8;font-family:'DM Mono',monospace}
 @keyframes spin{to{transform:rotate(360deg)}}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--border);
+  border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
 
-/* ── GAS URL MODAL ── */
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:100;
+/* ── DRAWER ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;
+  opacity:0;pointer-events:none;transition:opacity .25s}
+.overlay.open{opacity:1;pointer-events:auto}
+.drawer{position:fixed;bottom:0;left:0;right:0;background:var(--s1);
+  border-radius:20px 20px 0 0;z-index:201;padding:18px 18px 44px;
+  transform:translateY(100%);transition:transform .25s cubic-bezier(.32,.72,0,1);
+  max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.drawer.open{transform:translateY(0)}
+.dhandle{width:36px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 14px}
+.dcov{width:72px;height:96px;border-radius:6px;overflow:hidden;background:var(--s2);margin:0 auto 12px}
+.dcov img{width:100%;height:100%;object-fit:cover;display:block}
+.dtitle{font-size:16px;font-weight:800;line-height:1.3;margin-bottom:3px;text-align:center}
+.dsub{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:14px;text-align:center}
+.dsec{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:14px 0 6px}
+.drow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)}
+.dlabel{font-size:12px;color:var(--muted)}
+.dval{font-family:'DM Mono',monospace;font-size:13px}
+.dval.green{color:var(--green)}
+.dval.blue{color:var(--blue)}
+.dval.purple{color:var(--thriftbooks)}
+.dval.yellow{color:var(--yellow)}
+.dval.muted{color:var(--muted)}
+
+/* Vendor ranking */
+.vr-list{border-radius:8px;overflow:hidden;margin-bottom:12px}
+.vr-row{display:flex;align-items:center;padding:9px 12px;background:var(--s2);border-bottom:1px solid var(--border)}
+.vr-row:last-child{border-bottom:none}
+.vr-rank{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);width:18px;flex-shrink:0}
+.vr-name{flex:1;font-size:12px;font-weight:700}
+.vr-price{font-family:'DM Mono',monospace;font-size:14px;color:var(--green);font-weight:500}
+
+/* Stat 2-col grid */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);
+  border-radius:8px;overflow:hidden;margin-bottom:12px}
+.stat-cell{background:var(--s2);padding:10px;text-align:center}
+.stat-val{font-family:'DM Mono',monospace;font-size:15px;font-weight:500;margin-bottom:2px}
+.stat-lbl{font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+
+/* Copy ISBN in drawer */
+.dcopy-btn{width:100%;margin-top:12px;padding:12px;border-radius:8px;background:var(--s2);
+  border:1px solid var(--border);color:var(--text);font-family:'Syne',sans-serif;
+  font-weight:700;font-size:13px;cursor:pointer;transition:background 0.15s}
+.dcopy-btn:active,.dcopy-btn.copied{background:var(--green);color:#000}
+
+/* Toast */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--green);color:#000;font-family:'DM Mono',monospace;font-size:12px;
+  font-weight:700;padding:8px 16px;border-radius:20px;z-index:400;
+  opacity:0;transition:all 0.25s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* URL modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:300;
   display:flex;align-items:center;justify-content:center;padding:20px}
 .modal{background:var(--s1);border:1px solid var(--border);border-radius:14px;
   padding:20px;width:100%;max-width:420px}
 .modal h3{font-size:14px;font-weight:800;margin-bottom:4px}
-.modal p{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:12px}
+.modal p{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:12px;line-height:1.5}
 .modal input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;
-  padding:9px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;outline:none;margin-bottom:10px}
+  padding:9px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;
+  outline:none;margin-bottom:10px}
 .modal input:focus{border-color:var(--accent)}
 .modal-btns{display:flex;gap:8px}
-.modal-btn{flex:1;padding:9px;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;
-  font-weight:700;border:none;cursor:pointer;transition:opacity 0.1s}
+.modal-btn{flex:1;padding:9px;border-radius:8px;font-family:'Syne',sans-serif;
+  font-size:13px;font-weight:700;border:none;cursor:pointer}
 .modal-btn.primary{background:var(--accent);color:#fff}
 .modal-btn.secondary{background:var(--s2);color:var(--text)}
-.modal-btn:hover{opacity:0.85}
 </style>
 </head>
 <body>
@@ -107,22 +171,14 @@ body{display:flex;flex-direction:column}
 <!-- Header -->
 <div class="hdr">
   <div class="hdr-top">
-    <div class="logo">Book<span>Sort</span> <span style="font-size:13px;color:var(--muted);font-weight:400">v71</span></div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <div class="hdr-meta"><b id="stat-count">—</b> books</div>
-      <button class="reload-btn" onclick="loadBooks()">↺ Reload</button>
-      <button class="reload-btn" onclick="showUrlModal()" title="Change GAS URL">⚙</button>
-    </div>
+    <div class="logo">Book<span>Sort</span> <span style="font-size:11px;color:var(--muted);font-weight:400">v71</span></div>
+    <div class="hdr-stats"><b id="stat-count">—</b> books · <b id="stat-val">$—</b></div>
+    <button class="hdr-btn" onclick="loadBooks()">↺</button>
+    <button class="hdr-btn" onclick="showUrlModal()">⚙</button>
   </div>
-</div>
-
-<!-- Controls -->
-<div class="ctrl">
-  <div class="search-row">
-    <div class="search-wrap">
-      <input type="text" id="search" placeholder="Search title or ISBN…" oninput="renderGrid()">
-    </div>
-    <button class="sort-btn" id="sort-toggle" onclick="toggleSort()">↓ Best $</button>
+  <!-- Controls -->
+  <div class="search-wrap">
+    <input type="text" id="search" placeholder="Search title or ISBN…" oninput="renderList()">
   </div>
   <div class="filters">
     <div class="pill active" data-v="ALL" onclick="setFilter(this)">All</div>
@@ -132,19 +188,45 @@ body{display:flex;flex-direction:column}
     <div class="pill" data-v="EBAY" onclick="setFilter(this)">eBay $10+</div>
     <div class="pill" data-v="TRASH" onclick="setFilter(this)">Under $0.50</div>
   </div>
+  <div class="sort-bar">
+    <span id="count-label">0 books</span>
+    <div class="sort-btns">
+      <button onclick="setSort('price',this)" class="active">$ ↓</button>
+      <button onclick="setSort('newest',this)">Newest</button>
+      <button onclick="setSort('alpha',this)">A–Z</button>
+      <button onclick="setSort('ebay',this)">eBay $</button>
+    </div>
+  </div>
 </div>
 
-<!-- Grid -->
-<div class="grid-wrap">
-  <div class="grid" id="grid"></div>
-  <div id="state" class="state-msg" style="display:none"></div>
+<!-- Book list -->
+<div class="pages">
+  <div class="page" id="book-list-wrap">
+    <div id="book-list"></div>
+    <div id="state-msg" style="display:none" class="empty"></div>
+  </div>
 </div>
 
-<!-- GAS URL Modal -->
+<!-- Copy ISBN bar -->
+<div class="copy-isbn-bar">
+  <button class="copy-isbn-btn" id="copy-btn" onclick="copyISBNs()">Copy All ISBNs for ThriftBooks</button>
+</div>
+
+<!-- Overlay + Drawer -->
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="dhandle"></div>
+  <div id="dc"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- URL Modal -->
 <div class="modal-bg" id="url-modal" style="display:none">
   <div class="modal">
     <h3>GAS Write URL</h3>
-    <p>Paste your GAS_WRITE_URL (the Scan Log endpoint). Found in CREDENTIALS.md.</p>
+    <p>Paste your GAS_WRITE_URL — the Scan Log endpoint from CREDENTIALS.md</p>
     <input type="text" id="url-input" placeholder="https://script.google.com/macros/s/…/exec">
     <div class="modal-btns">
       <button class="modal-btn secondary" onclick="hideUrlModal()">Cancel</button>
@@ -154,178 +236,262 @@ body{display:flex;flex-direction:column}
 </div>
 
 <script>
-// ── Config ──────────────────────────────────────────────────────────────────
-// Hardcoded from CREDENTIALS.md — update here if GAS_WRITE_URL changes
+// ── Config ────────────────────────────────────────────────────────────────────
 const DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbwqJhxncPNffnJRVFcvfH7UbQVQKZ24oG1xDZdwXOon2KOqlg5U4jjvjS-Z2eqE7aHd/exec';
-const STORE_KEY = 'bs71_gas_url';
+const STORE_KEY   = 'bs71_gas_url';
 
-let _books = [];
-let _sortDesc = true; // sort by Best Price $ desc
-let _filter = 'ALL';
+let _books   = [];   // raw from GAS
+let _visible = [];   // filtered + sorted
+let _curSort = 'price';
+let _curFilter = 'ALL';
 let _gasUrl = '';
 
-// ── Init ────────────────────────────────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   _gasUrl = localStorage.getItem(STORE_KEY) || DEFAULT_URL;
   loadBooks();
 });
 
-// ── Load from GAS ────────────────────────────────────────────────────────────
+// ── Load ──────────────────────────────────────────────────────────────────────
 function loadBooks() {
-  setState('<div class="spinner"></div><span>Loading Scan Log…</span>');
+  setState('<span class="spinner"></span>Loading Scan Log…');
   document.getElementById('stat-count').textContent = '—';
+  document.getElementById('stat-val').textContent = '$—';
 
-  const url = _gasUrl + '?action=getScanLog&_=' + Date.now();
-
-  fetch(url)
-    .then(r => {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
+  fetch(_gasUrl + '?action=getScanLog&_t=' + Date.now())
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(d => {
+      if (!d.ok) throw new Error(d.error || 'GAS error');
+      _books = (d.rows || []).reverse(); // most-recent first by default
+      clearState();
+      renderList();
     })
-    .then(data => {
-      if (!data.ok) throw new Error(data.error || 'GAS returned error');
-      _books = (data.rows || []).reverse(); // most recent first
-      document.getElementById('stat-count').textContent = _books.length;
-      hideState();
-      renderGrid();
-    })
-    .catch(err => {
-      setState('<span>⚠ ' + err.message + '</span><span style="font-size:10px;margin-top:4px">Tap ⚙ to check URL or check internet</span>');
-    });
+    .catch(e => setState('⚠ ' + e.message + '\n\nTap ⚙ to check URL'));
 }
 
-// ── Render ───────────────────────────────────────────────────────────────────
-function renderGrid() {
+// ── Render ────────────────────────────────────────────────────────────────────
+function renderList() {
   const q = document.getElementById('search').value.trim().toLowerCase();
+
   let books = _books.filter(b => {
     if (q) {
-      const title = String(b['Title'] || '').toLowerCase();
-      const isbn  = String(b['ISBN'] || '');
-      if (!title.includes(q) && !isbn.includes(q)) return false;
+      const t = (b['Title'] || '').toLowerCase();
+      const i = String(b['ISBN'] || '');
+      if (!t.includes(q) && !i.includes(q)) return false;
     }
-    if (_filter === 'TB')    return parseFloat(b['TB Price $']) > 0;
-    if (_filter === 'BR')    return parseFloat(b['BooksRun $']) > 0;
-    if (_filter === 'BS')    return parseFloat(b['BS #1 $']) > 0;
-    if (_filter === 'EBAY')  return parseFloat(b['eBay Sold Net $']) >= 10;
-    if (_filter === 'TRASH') return parseFloat(b['Best Price $']) < 0.50;
+    const tb  = pf(b['TB Price $']);
+    const br  = pf(b['BooksRun $']);
+    const bs1 = pf(b['BS #1 $']);
+    const bp  = pf(b['Best Price $']);
+    const en  = pf(b['eBay Sold Net $']);
+    if (_curFilter === 'TB')    return tb  > 0;
+    if (_curFilter === 'BR')    return br  > 0;
+    if (_curFilter === 'BS')    return bs1 > 0;
+    if (_curFilter === 'EBAY')  return en  >= 10;
+    if (_curFilter === 'TRASH') return bp  < 0.50;
     return true;
   });
 
   // Sort
   books = books.slice().sort((a, b) => {
-    const pa = parseFloat(a['Best Price $']) || 0;
-    const pb = parseFloat(b['Best Price $']) || 0;
-    return _sortDesc ? pb - pa : pa - pb;
+    if (_curSort === 'price')  return pf(b['Best Price $']) - pf(a['Best Price $']);
+    if (_curSort === 'newest') return 0; // already most-recent-first
+    if (_curSort === 'alpha')  return (a['Title']||'').localeCompare(b['Title']||'');
+    if (_curSort === 'ebay')   return pf(b['eBay Sold Net $']) - pf(a['eBay Sold Net $']);
+    return 0;
   });
 
-  const grid = document.getElementById('grid');
+  _visible = books;
+
+  const totalVal = books.reduce((s,b) => s + pf(b['Best Price $']), 0);
+  document.getElementById('stat-count').textContent = books.length;
+  document.getElementById('stat-val').textContent = '$' + totalVal.toFixed(2);
+  document.getElementById('count-label').textContent = books.length + ' books';
+
   if (books.length === 0) {
-    grid.innerHTML = '';
-    setState('<span>No books match</span>');
+    document.getElementById('book-list').innerHTML = '';
+    setState('No books match');
     return;
   }
-  hideState();
-  grid.innerHTML = books.map(bookCard).join('');
+  clearState();
+  document.getElementById('book-list').innerHTML = books.map((b, i) => bookRow(b, i)).join('');
 }
 
-function bookCard(b) {
-  const isbn       = String(b['ISBN'] || '');
-  const title      = b['Title'] || 'Unknown Title';
-  const bestVendor = b['Best Vendor'] || '';
-  const bestPrice  = parseFloat(b['Best Price $']) || 0;
-  const tbPrice    = parseFloat(b['TB Price $']) || 0;
-  const brPrice    = parseFloat(b['BooksRun $']) || 0;
-  const bs1v       = b['BS #1 Vendor'] || '';
-  const bs1p       = parseFloat(b['BS #1 $']) || 0;
-  const bs2v       = b['BS #2 Vendor'] || '';
-  const bs2p       = parseFloat(b['BS #2 $']) || 0;
-  const ebayAvg    = parseFloat(b['eBay Sold Avg $']) || 0;
-  const ebayNet    = parseFloat(b['eBay Sold Net $']) || 0;
-  const ebayCnt    = b['eBay Sold #'] || 0;
-  const amzRank    = b['Amazon Rank'] || '';
-  const scannedAt  = b['Scanned At'] || '';
+function bookRow(b, idx) {
+  const isbn   = String(b['ISBN'] || '');
+  const title  = esc(b['Title'] || 'Unknown');
+  const bp     = pf(b['Best Price $']);
+  const bv     = b['Best Vendor'] || '';
+  const tb     = pf(b['TB Price $']);
+  const br     = pf(b['BooksRun $']);
+  const bs1p   = pf(b['BS #1 $']);
+  const bs1v   = b['BS #1 Vendor'] || '';
+  const en     = pf(b['eBay Sold Net $']);
+  const ea     = pf(b['eBay Sold Avg $']);
+  const rank   = parseInt(b['Amazon Rank']) || 0;
+  const date   = b['Scanned At'] ? new Date(b['Scanned At']).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
 
-  const coverUrl = isbn ? `https://images.abebooks.com/isbn/${isbn}-us-300.jpg` : '';
+  // Decide badge
+  let badgeClass = 'b-none', badgeLabel = 'No offer';
+  if (tb > 0 && tb >= br && tb >= bs1p) {
+    badgeClass = 'b-tb'; badgeLabel = 'ThriftBooks';
+  } else if (br > 0 && br >= bs1p) {
+    badgeClass = 'b-br'; badgeLabel = 'BooksRun';
+  } else if (bs1p > 0) {
+    badgeClass = 'b-bs'; badgeLabel = bs1v.replace(/\s*-\s*Sell.*/i,'').substring(0,14);
+  }
+  if (en >= 10) { badgeClass = 'b-ebay'; badgeLabel = 'eBay $' + en.toFixed(2) + ' net'; }
 
-  const fp = v => v > 0 ? '$' + v.toFixed(2) : '—';
-
-  const dateStr = scannedAt ? new Date(scannedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
-
-  const ebayBadge = ebayNet >= 10
-    ? `<div class="card-ebay-badge">eBay ${fp(ebayNet)} net (${ebayCnt} sold)</div>`
-    : ebayAvg > 0
-    ? `<div class="card-ebay-badge" style="color:var(--muted);border-color:var(--border)">eBay avg ${fp(ebayAvg)}</div>`
+  const rankDot = rank > 0
+    ? `<span class="rdot ${rank<100000?'rh':rank<500000?'rm':rank<2000000?'rs':'rc'}"></span>`
     : '';
 
-  return `
-  <div class="card">
-    ${coverUrl
-      ? `<img class="card-cover" src="${coverUrl}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
-      : ''}
-    <div class="card-cover-placeholder" style="display:${coverUrl?'none':'flex'}">📚</div>
-    <div class="card-body">
-      <div class="card-title">${esc(title)}</div>
-      <div class="card-isbn">${isbn}</div>
-      <div class="card-best">
-        <div class="card-best-price">${fp(bestPrice)}</div>
-        <div class="card-best-vendor">${esc(bestVendor)}</div>
+  const ebayLine = en >= 5
+    ? `<div class="ebay-line">eBay ~${fp(en)} net · ${parseInt(b['eBay Sold #'])||0} sold</div>`
+    : ea > 0 ? `<div class="ebay-line" style="color:var(--muted)">eBay avg ${fp(ea)}</div>` : '';
+
+  return `<div class="book-card" onclick="openDrawer(${idx})">
+    <div class="cover">
+      ${isbn ? `<img src="https://pictures.abebooks.com/isbn/${isbn}-us-300.jpg" alt="" loading="lazy" onerror="this.parentNode.innerHTML='<div class=\\"cover-ph\\">📚</div>'">` : '<div class="cover-ph">📚</div>'}
+    </div>
+    <div class="binfo">
+      <div class="btitle">${title}</div>
+      <div class="bmeta">
+        <span class="vbadge ${badgeClass}">${esc(badgeLabel)}</span>
+        <span class="offer ${bp>0?'':'zero'}">${bp>0?fp(bp):'—'}</span>
+        ${rankDot}${rank>0?`<span class="amz">#${rank.toLocaleString()}</span>`:''}
       </div>
-      <div class="card-prices">
-        <div class="price-row">
-          <span class="price-label">ThriftBooks</span>
-          <span class="price-val ${tbPrice>0?'purple':'zero'}">${fp(tbPrice)}</span>
-        </div>
-        <div class="price-row">
-          <span class="price-label">BooksRun</span>
-          <span class="price-val ${brPrice>0?'blue':'zero'}">${fp(brPrice)}</span>
-        </div>
-        ${bs1v ? `<div class="price-row">
-          <span class="price-label">${esc(bs1v)}</span>
-          <span class="price-val ${bs1p>0?'green':'zero'}">${fp(bs1p)}</span>
-        </div>` : ''}
-        ${bs2v && bs2p > 0 ? `<div class="price-row">
-          <span class="price-label">${esc(bs2v)}</span>
-          <span class="price-val green">${fp(bs2p)}</span>
-        </div>` : ''}
-        ${amzRank ? `<div class="price-row">
-          <span class="price-label">AMZ rank</span>
-          <span class="price-val">${Number(amzRank).toLocaleString()}</span>
-        </div>` : ''}
-      </div>
-      ${ebayBadge}
-      ${dateStr ? `<div class="card-date">${dateStr}</div>` : ''}
+      ${ebayLine}
+      <div class="isbn-chip">${isbn}${date?' · '+date:''}</div>
     </div>
   </div>`;
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-function esc(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+// ── Drawer ────────────────────────────────────────────────────────────────────
+function openDrawer(idx) {
+  const b = _visible[idx];
+  if (!b) return;
+
+  const isbn  = String(b['ISBN'] || '');
+  const title = b['Title'] || 'Unknown';
+  const bp    = pf(b['Best Price $']);
+  const bv    = b['Best Vendor'] || '';
+  const tb    = pf(b['TB Price $']);
+  const tw    = b['TB Wants #'] || '';
+  const br    = pf(b['BooksRun $']);
+  const bs1v  = (b['BS #1 Vendor']||'').replace(/\s*-\s*Sell.*/i,'');
+  const bs1p  = pf(b['BS #1 $']);
+  const bs2v  = (b['BS #2 Vendor']||'').replace(/\s*-\s*Sell.*/i,'');
+  const bs2p  = pf(b['BS #2 $']);
+  const bs3v  = (b['BS #3 Vendor']||'').replace(/\s*-\s*Sell.*/i,'');
+  const bs3p  = pf(b['BS #3 $']);
+  const ea    = pf(b['eBay Sold Avg $']);
+  const em    = pf(b['eBay Sold Med $']);
+  const el    = pf(b['eBay Sold Low $']);
+  const eh    = pf(b['eBay Sold High $']);
+  const ec    = parseInt(b['eBay Sold #']) || 0;
+  const en    = pf(b['eBay Sold Net $']);
+  const eslh  = b['eBay Search'] || '';
+  const rank  = parseInt(b['Amazon Rank']) || 0;
+  const amzL  = pf(b['Amazon Low $']);
+  const date  = b['Scanned At'] ? new Date(b['Scanned At']).toLocaleString() : '';
+
+  // Build vendor ranking rows
+  const vendors = [];
+  if (tb > 0)  vendors.push({name:'ThriftBooks', price:tb, css:'purple'});
+  if (br > 0)  vendors.push({name:'BooksRun', price:br, css:'blue'});
+  if (bs1p > 0) vendors.push({name:bs1v||'BS #1', price:bs1p, css:'green'});
+  if (bs2p > 0) vendors.push({name:bs2v||'BS #2', price:bs2p, css:'green'});
+  if (bs3p > 0) vendors.push({name:bs3v||'BS #3', price:bs3p, css:'green'});
+  vendors.sort((a,b) => b.price - a.price);
+
+  const rankLabel = rank > 0
+    ? (rank<100000?'🔥 Hot (<100k)':rank<500000?'⚡ Medium':rank<2000000?'Slow':'❄ Cold') + ' #' + rank.toLocaleString()
+    : '—';
+
+  const ebaySearchUrl = eslh
+    ? `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(eslh)}&LH_Sold=1&LH_Complete=1`
+    : `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(title)}&LH_Sold=1&LH_Complete=1`;
+
+  document.getElementById('dc').innerHTML = `
+    <div class="dcov"><img src="https://pictures.abebooks.com/isbn/${isbn}-us-300.jpg" onerror="this.parentNode.innerHTML='<div style=\\"width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:32px\\">📚</div>'"></div>
+    <div class="dtitle">${esc(title)}</div>
+    <div class="dsub">${isbn}${date?' · '+date:''}</div>
+
+    ${vendors.length > 0 ? `
+    <div class="dsec">Vendor Ranking</div>
+    <div class="vr-list">
+      ${vendors.map((v,i) => `<div class="vr-row"><div class="vr-rank">#${i+1}</div><div class="vr-name">${esc(v.name)}</div><div class="vr-price dval ${v.css}">${fp(v.price)}</div></div>`).join('')}
+    </div>` : '<div class="empty" style="padding:16px 0;font-size:11px">No vendor offers</div>'}
+
+    <div class="dsec">eBay Sold${ec>0?' ('+ec+' sales)':''}</div>
+    <div class="stat-grid">
+      <div class="stat-cell"><div class="stat-val">${ea>0?fp(ea):'—'}</div><div class="stat-lbl">Avg</div></div>
+      <div class="stat-cell"><div class="stat-val">${em>0?fp(em):'—'}</div><div class="stat-lbl">Median</div></div>
+      <div class="stat-cell"><div class="stat-val" style="color:var(--red)">${el>0?fp(el):'—'}</div><div class="stat-lbl">Low</div></div>
+      <div class="stat-cell"><div class="stat-val" style="color:var(--green)">${eh>0?fp(eh):'—'}</div><div class="stat-lbl">High</div></div>
+    </div>
+    ${en > 0 ? `<div class="drow"><div class="dlabel">eBay net (×0.87 − $4.50)</div><div class="dval ${en>=10?'green':'muted'}">${fp(en)}</div></div>` : ''}
+    <div class="drow"><div class="dlabel">Amazon Rank</div><div class="dval">${rankLabel}</div></div>
+    ${amzL > 0 ? `<div class="drow"><div class="dlabel">Amazon Low $</div><div class="dval">${fp(amzL)}</div></div>` : ''}
+    ${tw ? `<div class="drow"><div class="dlabel">TB Wants</div><div class="dval">${tw}</div></div>` : ''}
+
+    <a href="${esc(ebaySearchUrl)}" target="_blank" rel="noopener"
+      style="display:block;margin-top:12px;padding:10px 14px;border-radius:8px;background:var(--s2);border:1px solid var(--border);text-align:center;font-size:12px;font-weight:700;color:var(--text);text-decoration:none">
+      🛒 Search eBay Sold
+    </a>
+    <button class="dcopy-btn" id="dcopy-${isbn}" onclick="copyOne('${isbn}', this)">📋 Copy ISBN</button>
+  `;
+
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
 }
 
-function setState(html) {
-  const s = document.getElementById('state');
-  s.innerHTML = html;
-  s.style.display = 'flex';
-  document.getElementById('grid').innerHTML = '';
-}
-function hideState() {
-  document.getElementById('state').style.display = 'none';
+function closeDrawer() {
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
 }
 
-function toggleSort() {
-  _sortDesc = !_sortDesc;
-  document.getElementById('sort-toggle').textContent = (_sortDesc ? '↓' : '↑') + ' Best $';
-  renderGrid();
+// ── Copy functions ────────────────────────────────────────────────────────────
+function copyISBNs() {
+  const isbns = _visible.map(b => String(b['ISBN']||'')).filter(Boolean).join('\n');
+  if (!isbns) return;
+  navigator.clipboard.writeText(isbns).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.classList.add('copied');
+    btn.textContent = '✓ Copied ' + _visible.length + ' ISBNs';
+    setTimeout(() => { btn.classList.remove('copied'); btn.textContent = 'Copy All ISBNs for ThriftBooks'; }, 2000);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = isbns; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    showToast('Copied!');
+  });
 }
 
+function copyOne(isbn, btn) {
+  navigator.clipboard.writeText(isbn).then(() => {
+    btn.classList.add('copied'); btn.textContent = '✓ Copied!';
+    setTimeout(() => { btn.classList.remove('copied'); btn.textContent = '📋 Copy ISBN'; }, 1500);
+  }).catch(() => showToast('Copy: ' + isbn));
+}
+
+// ── Filter / Sort ─────────────────────────────────────────────────────────────
 function setFilter(el) {
   document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
-  _filter = el.dataset.v;
-  renderGrid();
+  _curFilter = el.dataset.v;
+  renderList();
 }
 
+function setSort(key, btn) {
+  _curSort = key;
+  document.querySelectorAll('.sort-btns button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderList();
+}
+
+// ── URL Modal ─────────────────────────────────────────────────────────────────
 function showUrlModal() {
   document.getElementById('url-input').value = _gasUrl;
   document.getElementById('url-modal').style.display = 'flex';
@@ -340,6 +506,28 @@ function saveUrl() {
   localStorage.setItem(STORE_KEY, v);
   hideUrlModal();
   loadBooks();
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function pf(v) { return parseFloat(v) || 0; }
+function fp(v) { return v > 0 ? '$' + v.toFixed(2) : '—'; }
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function setState(html) {
+  const s = document.getElementById('state-msg');
+  s.innerHTML = html; s.style.display = 'flex';
+  document.getElementById('book-list').innerHTML = '';
+}
+function clearState() {
+  document.getElementById('state-msg').style.display = 'none';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
 }
 </script>
 </body>
