@@ -341,7 +341,13 @@ function bookRow(b, idx){
     ? `<span class="brow-vendor" style="color:var(--yellow)">eBay ~${fp(en)} net</span>`
     : bv ? `<span class="brow-vendor">${esc(shortName(bv))}</span>` : '';
 
+  const thumbSrc = isbn ? `https://covers.openlibrary.org/b/isbn/${isbn}-S.jpg` : '';
+  const thumbHtml = thumbSrc
+    ? `<img src="${thumbSrc}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="brow-thumb-ph" style="display:none">📚</span>`
+    : `<span class="brow-thumb-ph">📚</span>`;
+
   return `<div class="brow" onclick="openDrawer(${idx})">
+    <div class="brow-thumb">${thumbHtml}</div>
     <div class="brow-main">
       <div class="brow-title">${title}</div>
       <div class="brow-sub">${subVendor}<span class="brow-isbn">${isbn}</span>${dot}</div>
