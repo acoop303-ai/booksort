@@ -429,6 +429,7 @@ function openDrawer(idx){
       ${offerRows}
 
       <tr class="led-sec"><td colspan="2">EBAY SOLD${ec?' ('+ec+' sales)':''}</td></tr>
+      ${psrRow(ea, ell)}
       <tr class="led-row${en>=10?' ebay-good':''}"><td>Net (×0.87 − $4.50)</td><td>${en>0?fp(en):'—'}</td></tr>
       <tr class="led-row"><td>Avg sold price</td><td>${ea>0?fp(ea):'—'}</td></tr>
       <tr class="led-row"><td>Median</td><td>${em>0?fp(em):'—'}</td></tr>
@@ -453,6 +454,22 @@ function openDrawer(idx){
 
   document.getElementById('overlay').classList.add('open');
   document.getElementById('drawer').classList.add('open');
+}
+
+// Price Stability Ratio: sold_avg / list_low
+// 0.8–1.2 stable, 1.3–2.0 volatile, >2.0 lottery ticket, <0.8 death spiral
+function psrRow(soldAvg, listLow){
+  if(!soldAvg || !listLow) return `<tr class="led-row dim"><td>Stability ratio</td><td>—</td></tr>`;
+  const psr = soldAvg / listLow;
+  let label, color, note;
+  if(psr > 2.0)       { label='⚠ LOTTERY TICKET';  color='var(--red)';    note='Sold avg vs. list floor mismatched — treat as vendor/trash'; }
+  else if(psr >= 1.3) { label='~ VOLATILE';         color='var(--yellow)'; note='Check edition/condition before listing'; }
+  else if(psr >= 0.8) { label='✓ STABLE';           color='var(--green)'; note='Market settled — safe to list'; }
+  else                { label='↓ DEATH SPIRAL';     color='var(--red)';    note='Listing price crashing — skip eBay'; }
+  return `<tr class="led-row">
+    <td>Stability ratio (PSR)<br><span style="font-size:9px;color:var(--dim)">${note}</span></td>
+    <td style="color:${color}">${psr.toFixed(2)}× <span style="font-size:10px">${label}</span></td>
+  </tr>`;
 }
 
 function closeDrawer(){
