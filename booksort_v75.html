@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>BookSort v75</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0F0F0F;--s1:#1A1A1A;--s2:#222;--s3:#2A2A2A;
+  --text:#F0EDE8;--muted:#666;--dim:#444;--border:#262626;
+  --accent:#FF6B35;--green:#4AE89E;--blue:#4A8EFF;--yellow:#FFD700;--purple:#B45CFF;--red:#FF5C5C;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;font-family:'Syne',sans-serif}
+body{background:var(--bg);color:var(--text);display:flex;flex-direction:column}
+
+/* Header */
+.hdr{flex-shrink:0;border-bottom:1px solid var(--border)}
+.hdr-top{display:flex;align-items:center;gap:8px;padding:10px 14px}
+.logo{font-size:17px;font-weight:800;letter-spacing:-0.5px;flex:1}
+.logo span{color:var(--accent)}
+.hdr-stats{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)}
+.hdr-stats b{color:var(--text)}
+.hdr-btn{background:none;border:1px solid var(--border);color:var(--muted);font-size:11px;padding:4px 8px;border-radius:5px;cursor:pointer}
+.hdr-btn:active{color:var(--text);border-color:#555}
+
+/* Search */
+.search-row{padding:7px 14px}
+.search-row input{width:100%;background:var(--s1);border:1px solid var(--border);border-radius:6px;
+  padding:7px 10px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none}
+.search-row input:focus{border-color:var(--dim)}
+.search-row input::placeholder{color:var(--muted)}
+
+/* Pills */
+.pills{display:flex;flex-wrap:wrap;gap:4px;padding:0 14px 7px}
+.pill{padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;
+  border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Syne',sans-serif;white-space:nowrap}
+.pill.active{background:var(--accent);color:#fff;border-color:transparent}
+.pill.vendor-pill.active{background:var(--green);color:#000;border-color:transparent}
+.pill[data-v="EBAY"].active{background:var(--yellow);color:#000;border-color:transparent}
+.pill[data-v="TRASH"].active{background:var(--s3);color:var(--muted);border-color:var(--dim)}
+
+/* Sort bar */
+.sort-row{display:flex;align-items:center;padding:4px 14px 6px;border-top:1px solid var(--border)}
+.sort-row span{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);flex:1}
+.sort-btns{display:flex;gap:3px}
+.sort-btns button{background:none;border:1px solid var(--border);color:var(--muted);
+  font-family:'DM Mono',monospace;font-size:10px;padding:3px 7px;border-radius:4px;cursor:pointer}
+.sort-btns button.active{background:var(--s2);color:var(--text);border-color:var(--dim)}
+
+/* List */
+.list-wrap{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.brow{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);
+  padding:8px 14px;cursor:pointer;transition:background .08s}
+.brow:active{background:var(--s1)}
+.brow-thumb{flex-shrink:0;width:36px;height:50px;border-radius:3px;background:var(--s2);
+  overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--dim)}
+.brow-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.brow-main{flex:1;min-width:0}
+.brow-title{font-size:12px;font-weight:700;line-height:1.25;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.brow-sub{display:flex;align-items:center;gap:5px}
+.brow-vendor{font-family:'DM Mono',monospace;font-size:10px;color:var(--green)}
+.brow-isbn{font-family:'DM Mono',monospace;font-size:9px;color:var(--dim)}
+.brow-right{flex-shrink:0;text-align:right}
+.brow-price{font-family:'DM Mono',monospace;font-size:13px;font-weight:500}
+.brow-price.zero{color:var(--dim);font-size:10px}
+.brow-date{font-family:'DM Mono',monospace;font-size:9px;color:var(--dim);margin-top:2px}
+.rdot{width:5px;height:5px;border-radius:50%;flex-shrink:0;display:inline-block}
+.rh{background:#FF4444}.rm{background:#FFA500}.rs{background:#666}.rc{background:#333}
+.group-hdr{padding:4px 14px;background:var(--s1);border-bottom:1px solid var(--border);
+  font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
+
+/* Copy bar */
+.copy-bar{flex-shrink:0;padding:6px 14px;border-top:1px solid var(--border)}
+.copy-btn{width:100%;padding:9px;background:var(--s1);border:1px solid var(--border);
+  border-radius:6px;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;color:var(--text);cursor:pointer}
+.copy-btn.copied{background:var(--green);color:#000;border-color:var(--green)}
+
+/* Drawer */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;
+  opacity:0;pointer-events:none;transition:opacity .2s}
+.overlay.open{opacity:1;pointer-events:auto}
+.drawer{position:fixed;bottom:0;left:0;right:0;z-index:201;background:var(--s1);
+  border-radius:16px 16px 0 0;transform:translateY(100%);
+  transition:transform .22s cubic-bezier(.32,.72,0,1);
+  max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.drawer.open{transform:translateY(0)}
+.dhandle-wrap{padding:10px 0 4px;text-align:center;cursor:pointer}
+.dhandle{display:inline-block;width:36px;height:4px;background:var(--border);border-radius:2px}
+
+/* Ledger header */
+.led-head{padding:12px 16px 0;border-bottom:1px solid var(--border);padding-bottom:10px}
+.led-head-row{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px}
+.led-cover{flex-shrink:0;width:52px;height:70px;border-radius:4px;background:var(--s2);
+  overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--dim)}
+.led-cover img{width:100%;height:100%;object-fit:cover;display:block}
+.led-info{flex:1;min-width:0}
+.led-title{font-size:13px;font-weight:800;line-height:1.3;margin-bottom:4px}
+.led-meta{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);line-height:1.7}
+.led-close{display:block;width:100%;padding:8px;border-radius:7px;background:var(--s2);
+  border:1px solid var(--border);color:var(--muted);font-family:'Syne',sans-serif;
+  font-size:11px;font-weight:700;cursor:pointer;text-align:center}
+
+/* Ledger table */
+.ledger{width:100%;border-collapse:collapse}
+.led-sec td{padding:5px 16px 3px;font-family:'DM Mono',monospace;font-size:9px;
+  color:var(--accent);text-transform:uppercase;letter-spacing:.8px;
+  background:var(--bg);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.led-row{border-bottom:1px solid var(--border)}
+.led-row td{padding:8px 16px;font-size:12px}
+.led-row td:first-child{color:var(--muted);font-family:'DM Mono',monospace;font-size:10px;width:48%}
+.led-row td:last-child{text-align:right;font-family:'DM Mono',monospace;font-weight:500}
+.led-row.best td:last-child{color:var(--green);font-size:14px}
+.led-row.ebay-good td:last-child{color:var(--yellow)}
+.led-row.hot td:last-child{color:var(--red)}
+.led-row.mid td:last-child{color:#FFA500}
+.led-row.dim td,.led-row.dim td:first-child{color:var(--dim);font-size:11px}
+
+/* Actions */
+.led-actions{padding:12px 16px 32px;display:flex;gap:8px}
+.led-btn{flex:1;padding:10px;border-radius:8px;font-family:'Syne',sans-serif;font-size:11px;
+  font-weight:700;border:1px solid var(--border);cursor:pointer;text-align:center;
+  text-decoration:none;display:block;background:var(--s2);color:var(--text)}
+.led-btn.ebay-btn{background:var(--yellow);border-color:var(--yellow);color:#000}
+
+/* Toast */
+.toast{position:fixed;bottom:72px;left:50%;transform:translateX(-50%) translateY(8px);
+  background:var(--green);color:#000;font-family:'DM Mono',monospace;font-size:11px;font-weight:700;
+  padding:7px 14px;border-radius:20px;z-index:400;opacity:0;transition:all .2s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Loading */
+.msg{padding:48px 20px;text-align:center;color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;line-height:2;white-space:pre-line}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sp{display:inline-block;width:12px;height:12px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle}
+
+/* URL modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:18px;width:100%;max-width:400px}
+.modal h3{font-size:13px;margin-bottom:4px}
+.modal p{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:10px;line-height:1.5}
+.modal input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--text);font-family:'DM Mono',monospace;font-size:10px;outline:none;margin-bottom:8px}
+.modal-btns{display:flex;gap:6px}
+.modal-btn{flex:1;padding:9px;border-radius:7px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;border:none;cursor:pointer}
+.modal-btn.primary{background:var(--accent);color:#fff}
+.modal-btn.sec{background:var(--s2);color:var(--text)}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-top">
+    <div class="logo">Book<span>Sort</span> <span style="font-size:10px;font-weight:400;color:var(--dim)">v75</span></div>
+    <div class="hdr-stats"><b id="stat-n">—</b> books &nbsp;·&nbsp; <b id="stat-v">$—</b></div>
+    <button class="hdr-btn" onclick="loadBooks()">↺</button>
+    <button class="hdr-btn" onclick="showModal()">⚙</button>
+  </div>
+  <div class="search-row">
+    <input id="search" type="text" placeholder="Search title or ISBN…" oninput="render()">
+  </div>
+  <div class="pills" id="pills"></div>
+  <div class="sort-row">
+    <span id="count-lbl">— books</span>
+    <div class="sort-btns">
+      <button class="active" onclick="setSort('price',this)">$ ↓</button>
+      <button onclick="setSort('newest',this)">New</button>
+      <button onclick="setSort('alpha',this)">A–Z</button>
+      <button onclick="setSort('ebay',this)">eBay $</button>
+      <button onclick="setSort('psr',this)">PSR</button>
+    </div>
+  </div>
+</div>
+
+<div class="list-wrap">
+  <div class="msg" id="msg"><span class="sp"></span>&nbsp;Loading…</div>
+  <div id="book-list"></div>
+</div>
+
+<div class="copy-bar">
+  <button class="copy-btn" id="copy-btn" onclick="copyISBNs()">Copy All ISBNs for ThriftBooks</button>
+</div>
+
+<div class="overlay" id="overlay"></div>
+<div class="drawer" id="drawer">
+  <div class="dhandle-wrap" id="dhandle-wrap"><div class="dhandle"></div></div>
+  <div id="dc"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<div class="modal-bg" id="url-modal" style="display:none">
+  <div class="modal">
+    <h3>GAS Scan Log URL</h3>
+    <p>Paste your GAS_WRITE_URL — ?action=getScanLog added automatically</p>
+    <input id="url-input" type="text" placeholder="https://script.google.com/macros/s/…/exec">
+    <div class="modal-btns">
+      <button class="modal-btn sec" onclick="hideModal()">Cancel</button>
+      <button class="modal-btn primary" onclick="saveUrl()">Save & Reload</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbwqJhxncPNffnJRVFcvfH7UbQVQKZ24oG1xDZdwXOon2KOqlg5U4jjvjS-Z2eqE7aHd/exec';
+const STORE_KEY   = 'bs75_url';
+
+let _all = [], _vis = [], _sort = 'price', _filter = 'ALL', _gasUrl = '';
+
+// ── Drawer close — one place, no double-fire ──────────────────────────────────
+function closeDrawer(){
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+}
+document.addEventListener('DOMContentLoaded', () => {
+  _gasUrl = localStorage.getItem(STORE_KEY) || DEFAULT_URL;
+  // Attach overlay + handle close via JS (not inline, avoids double-fire on mobile)
+  document.getElementById('overlay').addEventListener('click', closeDrawer);
+  document.getElementById('dhandle-wrap').addEventListener('click', closeDrawer);
+  loadBooks();
+});
+
+// ── Load ──────────────────────────────────────────────────────────────────────
+function loadBooks(){
+  showMsg('<span class="sp"></span>&nbsp;Loading Scan Log…');
+  const url = _gasUrl + '?action=getScanLog&_=' + Date.now();
+  fetch(url)
+    .then(r => {
+      if(!r.ok) throw new Error('HTTP ' + r.status + ' from GAS');
+      return r.text(); // get raw text first so we can see what came back
+    })
+    .then(raw => {
+      let d;
+      try { d = JSON.parse(raw); }
+      catch(e) { throw new Error('Bad JSON from GAS — check deployment\n\n' + raw.substring(0,120)); }
+      if(!d.ok) throw new Error('GAS returned error: ' + (d.error || JSON.stringify(d).substring(0,80)));
+      if(!Array.isArray(d.rows)) throw new Error('GAS response missing rows array');
+      _all = d.rows.slice().reverse();
+      hideMsg();
+      buildPills();
+      render();
+    })
+    .catch(e => {
+      showMsg('⚠ Load failed\n\n' + e.message + '\n\nURL tried:\n' + url.substring(0,80) + '…\n\nTap ⚙ to update URL');
+    });
+}
+
+// ── Build pills from Best Vendor column ───────────────────────────────────────
+function buildPills(){
+  const seen = new Set();
+  _all.forEach(b => { const v = clean(b['Best Vendor']||''); if(v) seen.add(v); });
+
+  const priority = ['ThriftBooks','BooksRun'];
+  const vendors = [...seen].sort((a,b) => {
+    const ai = priority.indexOf(a), bi = priority.indexOf(b);
+    if(ai>-1 && bi>-1) return ai-bi;
+    if(ai>-1) return -1; if(bi>-1) return 1;
+    return a.localeCompare(b);
+  });
+
+  document.getElementById('pills').innerHTML =
+    `<div class="pill active" data-v="ALL" onclick="setFilter(this)">All</div>` +
+    vendors.map(v =>
+      `<div class="pill vendor-pill" data-v="${esc(v)}" onclick="setFilter(this)">${esc(shortName(v))}</div>`
+    ).join('') +
+    `<div class="pill" data-v="EBAY" onclick="setFilter(this)">eBay $10+</div>` +
+    `<div class="pill" data-v="TRASH" onclick="setFilter(this)">Under $1</div>`;
+}
+
+function shortName(v){
+  const map = {'ThriftBooks':'ThriftBooks','BooksRun':'BooksRun','World of Books':'WOB',
+    "Powell's Books":"Powell's",'TextbookTiger':'TxtbkTiger','BookToCash':'BookToCash',
+    'eCampus':'eCampus','ValoreBooks':'Valore','Decluttr':'Decluttr','AbeBooks':'AbeBooks'};
+  return map[v] || (v.length > 13 ? v.substring(0,12)+'…' : v);
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function render(){
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  let books = _all.filter(b => {
+    if(q){ const t=(b['Title']||'').toLowerCase(), i=String(b['ISBN']||'');
+      if(!t.includes(q)&&!i.includes(q)) return false; }
+    if(_filter==='ALL')   return true;
+    if(_filter==='EBAY')  return pf(b['eBay Sold Net $'])>=10;
+    if(_filter==='TRASH') return pf(b['Best Price $'])<1;
+    return clean(b['Best Vendor']||'')===_filter;
+  });
+
+  books.sort((a,b) => {
+    if(_sort==='price')  return pf(b['Best Price $'])-pf(a['Best Price $']);
+    if(_sort==='newest') return 0;
+    if(_sort==='alpha')  return (a['Title']||'').localeCompare(b['Title']||'');
+    if(_sort==='ebay')   return pf(b['eBay Sold Net $'])-pf(a['eBay Sold Net $']);
+    if(_sort==='psr')    return getPSR(b)-getPSR(a); // highest PSR (most volatile) first
+    return 0;
+  });
+
+  _vis = books;
+  const total = books.reduce((s,b)=>s+pf(b['Best Price $']),0);
+  document.getElementById('stat-n').textContent = books.length;
+  document.getElementById('stat-v').textContent = '$'+total.toFixed(2);
+  document.getElementById('count-lbl').textContent = books.length+' books';
+
+  if(!books.length){ document.getElementById('book-list').innerHTML=''; showMsg('No results'); return; }
+  hideMsg();
+
+  let html='', lastDate=null;
+  books.forEach((b,i) => {
+    if(_sort==='newest'){ const d=dateLabel(b['Scanned At']); if(d!==lastDate){ html+=`<div class="group-hdr">${d}</div>`; lastDate=d; } }
+    html += bookRow(b,i);
+  });
+  document.getElementById('book-list').innerHTML = html;
+}
+
+function bookRow(b, idx){
+  const title  = esc(b['Title']||'Unknown');
+  const isbn   = String(b['ISBN']||'');
+  const bp     = pf(b['Best Price $']);
+  const bv     = clean(b['Best Vendor']||'');
+  const en     = pf(b['eBay Sold Net $']);
+  const rank   = parseInt(b['Amazon Rank'])||0;
+  const scanAt = b['Scanned At'] ? new Date(b['Scanned At']).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
+  const dot    = rank>0 ? `<span class="rdot ${rank<100000?'rh':rank<500000?'rm':rank<2000000?'rs':'rc'}"></span>` : '';
+  let subV;
+  if(_sort==='psr'){
+    const pl = psrLabel(getPSR(b));
+    subV = `<span class="brow-vendor" style="color:${pl.color}">PSR ${pl.text}</span>`;
+  } else if(en>=10){
+    subV = `<span class="brow-vendor" style="color:var(--yellow)">eBay ~${fp(en)} net</span>`;
+  } else {
+    subV = bv ? `<span class="brow-vendor">${esc(shortName(bv))}</span>` : '';
+  }
+
+  // Cover: try Open Library small thumbnail
+  const imgHtml = isbn
+    ? `<img src="https://covers.openlibrary.org/b/isbn/${isbn}-S.jpg" loading="lazy" onerror="this.replaceWith(document.createTextNode('📚'))">`
+    : '📚';
+
+  return `<div class="brow" onclick="openDrawer(${idx})">
+    <div class="brow-thumb">${imgHtml}</div>
+    <div class="brow-main">
+      <div class="brow-title">${title}</div>
+      <div class="brow-sub">${subV}<span class="brow-isbn">${isbn}</span>${dot}</div>
+    </div>
+    <div class="brow-right">
+      <div class="brow-price${bp>0?'':' zero'}">${bp>0?fp(bp):'—'}</div>
+      <div class="brow-date">${scanAt}</div>
+    </div>
+  </div>`;
+}
+
+// ── Drawer ────────────────────────────────────────────────────────────────────
+function openDrawer(idx){
+  const b = _vis[idx]; if(!b) return;
+  const isbn   = String(b['ISBN']||'');
+  const title  = b['Title']||'Unknown';
+  const bv     = clean(b['Best Vendor']||'');
+  const tb     = pf(b['TB Price $']);
+  const tw     = b['TB Wants #']||'—';
+  const br     = pf(b['BooksRun $']);
+  const bs1v   = clean(b['BS #1 Vendor']||'');
+  const bs1p   = pf(b['BS #1 $']);
+  const bs2v   = clean(b['BS #2 Vendor']||'');
+  const bs2p   = pf(b['BS #2 $']);
+  const bs3v   = clean(b['BS #3 Vendor']||'');
+  const bs3p   = pf(b['BS #3 $']);
+  const ea     = pf(b['eBay Sold Avg $']);
+  const em     = pf(b['eBay Sold Med $']);
+  const el     = pf(b['eBay Sold Low $']);
+  const eh     = pf(b['eBay Sold High $']);
+  const ec     = parseInt(b['eBay Sold #'])||0;
+  const en     = pf(b['eBay Sold Net $']);
+  const ell    = pf(b['eBay List Low $']);
+  const elm    = pf(b['eBay List Med $']);
+  const eln    = parseInt(b['eBay List #'])||0;
+  const eslh   = b['eBay Search']||title;
+  const rank   = parseInt(b['Amazon Rank'])||0;
+  const amzL   = pf(b['Amazon Low $']);
+  const scanAt = b['Scanned At'] ? new Date(b['Scanned At']).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : '—';
+
+  // All vendor offers sorted by price
+  const offers = [];
+  if(tb>0)   offers.push({n:'ThriftBooks',p:tb});
+  if(br>0)   offers.push({n:'BooksRun',p:br});
+  if(bs1p>0) offers.push({n:bs1v||'BookScouter #1',p:bs1p});
+  if(bs2p>0) offers.push({n:bs2v||'BookScouter #2',p:bs2p});
+  if(bs3p>0) offers.push({n:bs3v||'BookScouter #3',p:bs3p});
+  offers.sort((a,x)=>x.p-a.p);
+
+  const rankStr = rank>0 ? '#'+rank.toLocaleString()+(rank<100000?' 🔥':rank<500000?' ⚡':rank<2000000?'':' ❄') : '—';
+  const rankCls = rank>0&&rank<100000?'hot':rank>0&&rank<500000?'mid':'dim';
+  const ebayUrl = 'https://www.ebay.com/sch/i.html?_nkw='+encodeURIComponent(eslh)+'&LH_Sold=1&LH_Complete=1';
+
+  const coverImg = isbn
+    ? `<img src="https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg" loading="lazy" onerror="this.replaceWith(document.createTextNode('📚'))">`
+    : '📚';
+
+  const offerRows = offers.length
+    ? offers.map((o,i) => `<tr class="led-row${i===0?' best':''}"><td>${i===0?'★ ':''}${esc(o.n)}</td><td>${fp(o.p)}</td></tr>`).join('')
+    : `<tr class="led-row dim"><td colspan="2">No vendor offers</td></tr>`;
+
+  // PSR — Price Stability Ratio = sold_avg / list_low
+  let psrRow = '';
+  if(ea>0 && ell>0){
+    const psr = ea/ell;
+    let psrLabel, psrColor, psrNote;
+    if(psr>2)      { psrLabel='⚠ LOTTERY TICKET'; psrColor='var(--red)';    psrNote='Sold avg way above listing floor — treat as vendor book'; }
+    else if(psr>=1.3){ psrLabel='~ VOLATILE';      psrColor='var(--yellow)'; psrNote='Check edition/condition before listing'; }
+    else if(psr>=0.8){ psrLabel='✓ STABLE';        psrColor='var(--green)';  psrNote='Market settled — safe to list'; }
+    else             { psrLabel='↓ DEATH SPIRAL';  psrColor='var(--red)';    psrNote='Listing floor crashing — skip eBay'; }
+    psrRow = `<tr class="led-row"><td>Stability (PSR)<br><span style="font-size:9px;color:var(--dim)">${psrNote}</span></td><td style="color:${psrColor}">${psr.toFixed(2)}× ${psrLabel}</td></tr>`;
+  } else {
+    psrRow = `<tr class="led-row dim"><td>Stability (PSR)</td><td>—</td></tr>`;
+  }
+
+  document.getElementById('dc').innerHTML =
+    `<div class="led-head">
+      <div class="led-head-row">
+        <div class="led-cover">${coverImg}</div>
+        <div class="led-info">
+          <div class="led-title">${esc(title)}</div>
+          <div class="led-meta">ISBN ${isbn}<br>Scanned ${scanAt}<br>Best: <span style="color:var(--green)">${esc(bv)||'—'}</span></div>
+        </div>
+      </div>
+      <button class="led-close" onclick="closeDrawer()">✕ Close</button>
+    </div>
+    <table class="ledger">
+      <tr class="led-sec"><td colspan="2">VENDOR OFFERS</td></tr>
+      ${offerRows}
+
+      <tr class="led-sec"><td colspan="2">EBAY SOLD${ec?' ('+ec+' sales)':''}</td></tr>
+      ${psrRow}
+      <tr class="led-row${en>=10?' ebay-good':''}"><td>Net (×0.87 − $4.50)</td><td>${en>0?fp(en):'—'}</td></tr>
+      <tr class="led-row"><td>Avg sold</td><td>${ea>0?fp(ea):'—'}</td></tr>
+      <tr class="led-row"><td>Median</td><td>${em>0?fp(em):'—'}</td></tr>
+      <tr class="led-row dim"><td>Low / High</td><td>${el>0?fp(el)+' – '+fp(eh):'—'}</td></tr>
+
+      <tr class="led-sec"><td colspan="2">EBAY ACTIVE${eln?' ('+eln+')':''}</td></tr>
+      <tr class="led-row"><td>List low</td><td>${ell>0?fp(ell):'—'}</td></tr>
+      <tr class="led-row dim"><td>List median</td><td>${elm>0?fp(elm):'—'}</td></tr>
+
+      <tr class="led-sec"><td colspan="2">AMAZON</td></tr>
+      <tr class="led-row ${rankCls}"><td>Sales rank</td><td>${rankStr}</td></tr>
+      <tr class="led-row dim"><td>Amazon low</td><td>${amzL>0?fp(amzL):'—'}</td></tr>
+
+      <tr class="led-sec"><td colspan="2">THRIFTBOOKS</td></tr>
+      <tr class="led-row"><td>Buyback offer</td><td>${tb>0?fp(tb):'—'}</td></tr>
+      <tr class="led-row dim"><td>Wants</td><td>${tw}</td></tr>
+    </table>
+    <div class="led-actions">
+      <button class="led-btn" id="dcopy" onclick="copyOne('${isbn}')">📋 Copy ISBN</button>
+      ${en>=5?`<a class="led-btn ebay-btn" href="${ebayUrl}" target="_blank" rel="noopener">🛒 eBay Sold</a>`:''}
+    </div>`;
+
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+}
+
+// ── Copy ──────────────────────────────────────────────────────────────────────
+function copyISBNs(){
+  const list = _vis.map(b=>String(b['ISBN']||'')).filter(Boolean).join('\n');
+  if(!list) return;
+  navigator.clipboard.writeText(list).then(()=>{
+    const btn=document.getElementById('copy-btn');
+    btn.classList.add('copied'); btn.textContent='✓ Copied '+_vis.length+' ISBNs';
+    setTimeout(()=>{ btn.classList.remove('copied'); btn.textContent='Copy All ISBNs for ThriftBooks'; },2500);
+  }).catch(()=>showToast('Clipboard blocked'));
+}
+function copyOne(isbn){
+  navigator.clipboard.writeText(isbn).then(()=>{
+    const btn=document.getElementById('dcopy');
+    if(btn){ btn.textContent='✓ Copied!'; setTimeout(()=>{ btn.textContent='📋 Copy ISBN'; },1500); }
+  }).catch(()=>showToast(isbn));
+}
+
+// ── Filter / Sort ─────────────────────────────────────────────────────────────
+function setFilter(el){
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active'); _filter=el.dataset.v; render();
+}
+function setSort(key,btn){
+  _sort=key;
+  document.querySelectorAll('.sort-btns button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); render();
+}
+
+// ── URL modal ─────────────────────────────────────────────────────────────────
+function showModal(){ document.getElementById('url-input').value=_gasUrl; document.getElementById('url-modal').style.display='flex'; }
+function hideModal(){ document.getElementById('url-modal').style.display='none'; }
+function saveUrl(){
+  const v=document.getElementById('url-input').value.trim();
+  if(!v.includes('script.google.com')){ alert('Paste a valid GAS URL'); return; }
+  _gasUrl=v; localStorage.setItem(STORE_KEY,v); hideModal(); loadBooks();
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function getPSR(b){
+  const ea=pf(b['eBay Sold Avg $']), ell=pf(b['eBay List Low $']);
+  return (ea>0&&ell>0) ? ea/ell : -1; // -1 = no data, sorts to bottom
+}
+function psrLabel(psr){
+  if(psr<0)    return {text:'—',       color:'var(--dim)'};
+  if(psr>2)    return {text:psr.toFixed(1)+'× ⚠',  color:'var(--red)'};
+  if(psr>=1.3) return {text:psr.toFixed(1)+'× ~',  color:'var(--yellow)'};
+  if(psr>=0.8) return {text:psr.toFixed(1)+'× ✓',  color:'var(--green)'};
+  return              {text:psr.toFixed(1)+'× ↓',  color:'var(--red)'};
+}
+function pf(v){ return parseFloat(v)||0; }
+function fp(v){ return v>0?'$'+v.toFixed(2):'—'; }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function clean(v){ return String(v||'').replace(/\s*-\s*Sell Your Books.*/i,'').replace(/\s*-\s*Sell.*/i,'').trim(); }
+function showMsg(h){ document.getElementById('msg').innerHTML=h; document.getElementById('msg').style.display='block'; document.getElementById('book-list').innerHTML=''; }
+function hideMsg(){ document.getElementById('msg').style.display='none'; }
+function showToast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); }
+function dateLabel(raw){
+  if(!raw) return 'Unknown';
+  const d=new Date(raw); if(isNaN(d)) return 'Unknown';
+  const diff=Math.floor((Date.now()-d)/86400000);
+  if(diff===0) return 'Today'; if(diff===1) return 'Yesterday';
+  return d.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
+}
+</script>
+</body>
+</html>
