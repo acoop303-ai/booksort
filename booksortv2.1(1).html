@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>BookSort</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+:root{
+  --bg:#0F0F0F;--s1:#1A1A1A;--s2:#242424;--s3:#2E2E2E;
+  --text:#F0EDE8;--muted:#777;--border:#2E2E2E;
+  --accent:#FF6B35;--green:#4AE89E;--blue:#4A9EE8;--yellow:#E8C44A;--purple:#B47AE8;--red:#E87A7A;
+  --booksrun:#4A9EE8;--worldbooks:#4AE89E;--thriftbooks:#B47AE8;
+  --powells:#E87A7A;--booktocash:#E8C44A;--ecampus:#80FF80;
+  --topdollar:#80FFCC;--bluerocket:#7AB8E8;--campusbear:#E8A84A;
+  --ebay:#FF6B35;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;display:flex;flex-direction:column}
+
+/* ── PICK SCREEN ── */
+#pick-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:28px 20px;text-align:center}
+.logo-big{font-size:36px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}
+.logo-big span{color:var(--accent)}
+.logo-sub{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:24px}
+.pick-label{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:8px;text-align:left;width:100%;max-width:420px;letter-spacing:1px;text-transform:uppercase}
+.haul-list{width:100%;max-width:420px;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px;max-height:45vh;overflow-y:auto}
+.haul-item{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s}
+.haul-item:last-child{border-bottom:none}
+.haul-item:active,.haul-item:hover{background:var(--s1)}
+.haul-name{font-size:14px;font-weight:700;flex:1;text-align:left}
+.haul-meta{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
+.haul-meta b{color:var(--accent)}
+.haul-arrow{color:var(--muted);margin-left:8px}
+.msg{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);padding:20px;text-align:center}
+.err{color:#FF6060}
+.divider-or{width:100%;max-width:420px;display:flex;align-items:center;gap:10px;margin:4px 0 14px;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)}
+.divider-or::before,.divider-or::after{content:'';flex:1;height:1px;background:var(--border)}
+.drop-zone{width:100%;max-width:420px;border:1.5px dashed var(--border);border-radius:10px;padding:20px;cursor:pointer;background:var(--s1);position:relative;transition:border-color 0.15s}
+.drop-zone:hover,.drop-zone.over{border-color:var(--accent)}
+.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-title{font-size:14px;font-weight:700;margin-bottom:3px}
+.drop-sub{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace}
+
+/* ── APP ── */
+#app{display:none;flex-direction:column;height:100%}
+.hdr{background:var(--bg);border-bottom:1px solid var(--border);flex-shrink:0}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;padding:11px 16px 0}
+.logo{font-size:19px;font-weight:800;letter-spacing:-0.5px}
+.logo span{color:var(--accent)}
+.hdr-stats{display:flex;gap:12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
+.hdr-stats b{color:var(--text)}
+.back-btn{background:none;border:none;color:var(--muted);font-size:12px;font-family:'Syne',sans-serif;font-weight:700;cursor:pointer;padding:0}
+.app-tabs{display:flex;background:var(--bg)}
+.app-tab{flex:1;padding:9px 4px;text-align:center;font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;letter-spacing:0.5px}
+.app-tab.active{color:var(--text);border-bottom-color:var(--accent)}
+.scans-ctrl{flex-shrink:0}
+.search-wrap{position:relative;padding:9px 16px 0}
+.search-wrap input{width:100%;background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:8px 32px 8px 12px;color:var(--text);font-family:'Syne',sans-serif;font-size:13px;outline:none;transition:border-color 0.15s}
+.search-wrap input:focus{border-color:var(--accent)}
+.search-wrap input::placeholder{color:var(--muted)}
+.srch-icon{position:absolute;right:26px;top:50%;transform:translateY(-25%);color:var(--muted);pointer-events:none;font-size:14px}
+.filters{display:flex;gap:5px;overflow-x:auto;padding:7px 16px;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.pill{flex-shrink:0;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:transparent;color:var(--muted);white-space:nowrap;font-family:'Syne',sans-serif;transition:all 0.12s}
+.pill.active{border-color:transparent;color:#000}
+.pill[data-v="ALL"].active{background:var(--accent);color:#fff}
+.pill[data-v="EBAY"].active{background:var(--ebay);color:#fff}
+.pill[data-v="NO OFFER"].active{background:#333;color:var(--muted);border-color:#555}
+.pill[data-v="BooksRun"].active{background:var(--booksrun)}
+.pill[data-v="World of Books"].active{background:var(--worldbooks)}
+.pill[data-v="ThriftBooks"].active{background:var(--thriftbooks);color:#fff}
+.pill[data-v="Powell's"].active{background:var(--powells);color:#fff}
+.pill[data-v="BookToCash"].active,.pill[data-v="Book to Cash"].active{background:var(--booktocash)}
+.pill[data-v="eCampus"].active{background:var(--ecampus)}
+.pill[data-v="TopDollar4Books"].active{background:var(--topdollar)}
+.pill[data-v="BlueRocketBooks"].active,.pill[data-v="Blue Rocket Books"].active{background:var(--bluerocket)}
+.pill[data-v="CampusBear"].active,.pill[data-v="Campus Bear"].active{background:var(--campusbear)}
+.sort-bar{display:flex;align-items:center;padding:5px 16px 7px;font-size:11px;color:var(--muted)}
+.sort-bar span{font-family:'DM Mono',monospace}
+.sort-btns{margin-left:auto;display:flex;gap:4px}
+.sort-btns button{background:var(--s1);border:1px solid var(--border);color:var(--muted);font-size:11px;font-family:'Syne',sans-serif;font-weight:600;padding:3px 9px;border-radius:5px;cursor:pointer}
+.sort-btns button.active{background:var(--s2);color:var(--text);border-color:#555}
+.pages{flex:1;overflow:hidden;position:relative}
+.page{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none}
+.page.active{display:block}
+
+/* ── BOOK CARDS ── */
+.book-card{display:flex;gap:11px;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;align-items:flex-start}
+.book-card:active{background:var(--s1)}
+.book-card.dupe{border-left:3px solid var(--accent)}
+.cover{flex-shrink:0;width:46px;height:62px;border-radius:4px;overflow:hidden;background:var(--s2)}
+.cover img{width:100%;height:100%;object-fit:cover;display:block}
+.cover-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:18px}
+.binfo{flex:1;min-width:0}
+.btitle{font-size:13px;font-weight:700;line-height:1.3;margin-bottom:1px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.bauthor{font-size:10px;color:var(--muted);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'DM Mono',monospace}
+.bmeta{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.vbadge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap}
+.offer{font-family:'DM Mono',monospace;font-size:14px;font-weight:500}
+.offer.zero{color:var(--muted);font-size:11px}
+.amz{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)}
+.dupe-tag{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(255,107,53,0.15);color:var(--accent);font-family:'DM Mono',monospace}
+.tb-tag{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(180,122,232,0.15);color:var(--thriftbooks);font-family:'DM Mono',monospace}
+.rdot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0}
+.rh{background:#FF4444}.rm{background:#FFA500}.rs{background:#888}.rc{background:#444}
+.b-booksrun{background:#1A3A5C;color:var(--booksrun)}
+.b-worldbooks{background:#0D3322;color:var(--worldbooks)}
+.b-thriftbooks{background:#2A1A44;color:var(--thriftbooks)}
+.b-powells{background:#3A1A1A;color:var(--powells)}
+.b-booktocash{background:#3A2E0A;color:var(--booktocash)}
+.b-ecampus{background:#0A2A0A;color:var(--ecampus)}
+.b-topdollar{background:#0A2A1A;color:var(--topdollar)}
+.b-bluerocket{background:#1A2E3A;color:var(--bluerocket)}
+.b-campusbear{background:#3A2A0A;color:var(--campusbear)}
+.b-sellback{background:#1A2E3A;color:var(--bluerocket)}
+.b-empire{background:#1A1A3A;color:#A0B4FF}
+.b-valore{background:#2A0A3A;color:#C060FF}
+.b-ebay{background:#3A1A00;color:var(--ebay)}
+.b-noOffer{background:var(--s2);color:var(--muted)}
+.letter-div{padding:4px 16px;background:var(--s1);font-size:11px;font-weight:800;color:var(--muted);letter-spacing:2px;border-bottom:1px solid var(--border)}
+.isbn-copy-bar{background:var(--s1);border-bottom:1px solid var(--border);padding:8px 16px;display:flex;align-items:center;justify-content:space-between}
+.copy-btn{background:var(--accent);color:#fff;border:none;border-radius:6px;padding:6px 14px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer}
+.copy-btn.copied{background:var(--green);color:#000}
+
+/* ── DASHBOARD ── */
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);margin-bottom:1px}
+.dash-card{background:var(--s1);padding:14px 14px}
+.dash-card.span2{grid-column:span 2}
+.dash-label{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;font-family:'Syne',sans-serif}
+.dash-val{font-family:'DM Mono',monospace;font-size:22px;font-weight:500;line-height:1}
+.dash-val.accent{color:var(--accent)}.dash-val.green{color:var(--green)}.dash-val.blue{color:var(--blue)}.dash-val.red{color:var(--red)}
+.dash-sub{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:3px}
+.section-hdr{padding:8px 16px 5px;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);background:var(--s1)}
+.vbar-row{display:flex;align-items:center;gap:8px;padding:7px 16px;border-bottom:0.5px solid var(--border)}
+.vbar-name{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;width:110px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vbar-track{flex:1;background:var(--border);border-radius:2px;height:4px;overflow:hidden}
+.vbar-fill{height:100%;border-radius:2px}
+.vbar-val{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);width:48px;text-align:right;flex-shrink:0}
+.day-chart{padding:12px 16px;overflow-x:auto}
+.day-bars{display:flex;align-items:flex-end;gap:4px;height:80px}
+.day-bar-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;width:32px}
+.day-bar{width:100%;border-radius:2px 2px 0 0;background:var(--accent);min-height:2px;transition:height 0.3s}
+.day-label{font-family:'DM Mono',monospace;font-size:8px;color:var(--muted);text-align:center;white-space:nowrap}
+.tb-status{margin:10px 16px;padding:12px 14px;border-radius:8px;display:flex;align-items:center;gap:10px}
+.tb-status.transit{background:rgba(232,196,74,0.1);border:1px solid rgba(232,196,74,0.3)}
+.tb-status.clear{background:rgba(74,232,158,0.08);border:1px solid rgba(74,232,158,0.2)}
+.tb-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.tb-dot.transit{background:var(--yellow)}.tb-dot.clear{background:var(--green)}
+
+/* ── SHIPPED ── */
+.box-card{margin:8px 12px;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--s1);cursor:pointer}
+.box-head{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border)}
+.box-id{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
+.box-vendor{font-size:15px;font-weight:800;flex:1}
+.box-val{font-family:'DM Mono',monospace;font-size:15px;color:var(--accent)}
+.box-arrow{color:var(--muted)}
+.box-stats{display:flex;padding:9px 14px;gap:18px}
+.bstat{display:flex;flex-direction:column;gap:2px}
+.bstat-val{font-family:'DM Mono',monospace;font-size:13px}
+.bstat-val.green{color:var(--green)}.bstat-val.red{color:var(--red)}
+.bstat-lbl{font-size:9px;color:var(--muted);font-family:'Syne',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
+.spill{font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;font-family:'Syne',sans-serif}
+.sp-packed{background:rgba(74,158,232,0.15);color:var(--blue)}
+.sp-shipped{background:rgba(232,196,74,0.15);color:var(--yellow)}
+.sp-paid{background:rgba(74,232,158,0.15);color:var(--green)}
+.box-book-row{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:0.5px solid var(--border)}
+.box-book-row:last-child{border-bottom:none}
+.bbook-title{font-size:12px;font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bbook-price{font-family:'DM Mono',monospace;font-size:12px;color:var(--accent);flex-shrink:0}
+
+/* ── ACTIONS ── */
+.action-grid{padding:16px}
+.action-section{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;margin-top:18px}
+.action-section:first-child{margin-top:0}
+.action-btn{width:100%;background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;margin-bottom:8px;transition:background 0.1s;text-align:left}
+.action-btn:active,.action-btn:hover{background:var(--s2)}
+.action-btn.running{opacity:0.6;pointer-events:none}
+.action-btn.success{border-color:var(--green)}
+.action-btn.error{border-color:var(--red)}
+.action-icon{font-size:22px;flex-shrink:0}
+.action-info{flex:1}
+.action-title{font-size:14px;font-weight:700;margin-bottom:2px}
+.action-desc{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace}
+.action-status{font-size:11px;font-family:'DM Mono',monospace;flex-shrink:0;text-align:right}
+.action-status.ok{color:var(--green)}.action-status.err{color:var(--red)}.action-status.run{color:var(--yellow)}
+
+/* ── DRAWER ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;opacity:0;pointer-events:none;transition:opacity .2s}
+.overlay.open{opacity:1;pointer-events:all}
+.drawer{position:fixed;bottom:0;left:0;right:0;background:var(--s1);border-radius:20px 20px 0 0;z-index:201;padding:18px 18px 38px;transform:translateY(100%);transition:transform .25s cubic-bezier(.32,.72,0,1);max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.drawer.open{transform:translateY(0)}
+.dhandle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+.dcov{width:80px;height:106px;border-radius:6px;overflow:hidden;background:var(--s2);margin-bottom:12px}
+.dcov img{width:100%;height:100%;object-fit:cover}
+.dtitle{font-size:18px;font-weight:800;line-height:1.2;margin-bottom:2px}
+.dauthor{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:12px}
+.drow{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.dlabel{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+.dval{font-family:'DM Mono',monospace;font-size:13px;font-weight:500}
+.dsec{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:11px 0 5px;font-family:'Syne',sans-serif}
+.hist-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid var(--border)}
+.hist-row:last-child{border-bottom:none}
+.hist-vendor{font-size:12px;font-weight:700}
+.hist-date{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace}
+.hist-price{font-family:'DM Mono',monospace;font-size:13px;color:var(--accent)}
+.hist-status{font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px}
+.tb-price-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid var(--border)}
+.daction{margin-top:16px;padding:14px;border-radius:10px;text-align:center;font-size:14px;font-weight:700}
+.da-ebay{background:#3A1A00;color:var(--ebay);border:1.5px solid var(--ebay)}
+.da-vendor{background:var(--s2);color:var(--text)}
+.da-donate{background:var(--s2);color:var(--muted)}
+.isbn-chip{font-family:'DM Mono',monospace;font-size:11px;background:var(--s2);padding:3px 9px;border-radius:5px;color:var(--muted);letter-spacing:1px}
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:5px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:50px 20px;color:var(--muted);font-family:'DM Mono',monospace;font-size:12px;line-height:2}
+</style>
+</head>
+<body>
+
+<!-- PICK SCREEN -->
+<div id="pick-screen">
+  <div class="logo-big">Book<span>Sort</span></div>
+  <div class="logo-sub">connected to your Google Sheet</div>
+  <div class="pick-label">Recent hauls</div>
+  <div class="haul-list" id="haul-list">
+    <div class="msg"><span class="spinner"></span>Loading…</div>
+  </div>
+  <div class="divider-or">or upload csv</div>
+  <div class="drop-zone" id="dz">
+    <input type="file" id="fi" accept=".csv">
+    <div class="drop-title">📊 Drop CSV here</div>
+    <div class="drop-sub">From your haul summary email</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="hdr">
+    <div class="hdr-top">
+      <div class="logo">Book<span>Sort</span></div>
+      <div class="hdr-stats"><span><b id="vc">0</b> books</span><span><b id="vv">$0</b></span></div>
+      <button class="back-btn" onclick="goBack()">← hauls</button>
+    </div>
+    <div class="app-tabs">
+      <div class="app-tab active" onclick="switchTab('scans',this)">SCANS</div>
+      <div class="app-tab" onclick="switchTab('dashboard',this)">DASH</div>
+      <div class="app-tab" onclick="switchTab('shipped',this)">SHIPPED</div>
+      <div class="app-tab" onclick="switchTab('actions',this)">⚡ ACTIONS</div>
+    </div>
+    <div class="scans-ctrl" id="scans-ctrl">
+      <div class="isbn-copy-bar">
+        <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)" id="isbn-copy-label">Copy ISBNs for ThriftBooks</span>
+        <button class="copy-btn" id="copy-isbn-btn" onclick="copyISBNs()">Copy All ISBNs</button>
+      </div>
+      <div class="search-wrap">
+        <input type="search" id="search" placeholder="Search title, author, ISBN…" autocomplete="off">
+        <span class="srch-icon">⌕</span>
+      </div>
+      <div class="filters" id="filters"></div>
+      <div class="sort-bar">
+        <span id="rl">0 books</span>
+        <div class="sort-btns">
+          <button class="active" onclick="setSort('alpha',this)">A–Z</button>
+          <button onclick="setSort('offer',this)">$ offer</button>
+          <button onclick="setSort('rank',this)">rank</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="pages">
+    <div class="page active" id="page-scans"><div id="book-list"></div></div>
+    <div class="page" id="page-dashboard"><div id="dash-content"></div></div>
+    <div class="page" id="page-shipped"><div id="shipped-list"></div></div>
+    <div class="page" id="page-actions"><div class="action-grid" id="action-grid"></div></div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer"><div class="dhandle"></div><div id="dc"></div></div>
+
+<script>
+var SCRIPT_URL='https://script.google.com/macros/s/AKfycbxoCl9d-DICzN3yH-JLpFwcgwxaGeDrpOjrR-VlATUQyXD4hfxXxjObSGz4auqXlnRQlw/exec';
+var BOOKS=[],visibleBooks=[],HISTORY={},BOXES=[],TB_PRICES={};
+var curFilter='ALL',curSort='alpha',curSearch='',curTab='scans';
+var isAllScans=false;
+
+var BADGE={
+  'BooksRun':'b-booksrun','World of Books':'b-worldbooks','World of Books - Sell Your Books':'b-worldbooks',
+  'ThriftBooks':'b-thriftbooks',"Powell's":'b-powells',"Powell's Books":'b-powells',
+  'BookToCash':'b-booktocash','Book to Cash':'b-booktocash',
+  'SellBackBooks':'b-sellback','Sell Back Books':'b-sellback',
+  'CollegeBooksDirect':'b-sellback','College Books Direct':'b-sellback',
+  'BlueRocketBooks':'b-bluerocket','Blue Rocket Books':'b-bluerocket',
+  'CampusBear':'b-campusbear','Campus Bear':'b-campusbear',
+  'eCampus':'b-ecampus','Empire Text':'b-empire','TopDollar4Books':'b-topdollar','Valore':'b-valore',
+};
+var VC={'BooksRun':'#4A9EE8','World of Books':'#4AE89E','World of Books - Sell Your Books':'#4AE89E',
+  'ThriftBooks':'#B47AE8',"Powell's":'#E87A7A',"Powell's Books":'#E87A7A',
+  'BookToCash':'#E8C44A','eCampus':'#80FF80','TopDollar4Books':'#80FFCC',
+  'BlueRocketBooks':'#7AB8E8','CampusBear':'#E8A84A','Empire Text':'#A0B4FF','Valore':'#C060FF',
+  'SellBackBooks':'#7AB8E8','CollegeBooksDirect':'#4AE8D4'};
+
+function badge(b){if(b.ebay)return 'b-ebay';var v=b.vendor||'';return BADGE[v]||BADGE[v.replace(' - Sell Your Books','')]||'b-noOffer';}
+function label(b){if(b.ebay)return 'EBAY HOLD';var v=b.vendor||'';if(!v||v==='No Offer'||v==='No Offer Found')return 'NO OFFER';return v.replace(' - Sell Your Books','');}
+function rdot(r){if(!r||r<=0)return '';var c=r<100000?'rh':r<500000?'rm':r<2000000?'rs':'rc';return '<span class="rdot '+c+'"></span>';}
+function fmt(n){return '$'+(parseFloat(n)||0).toFixed(2);}
+function fmtD(d){if(!d)return '';try{var dt=new Date(d);return isNaN(dt)?String(d):dt.toLocaleDateString('en-US',{month:'short',day:'numeric'});}catch(e){return String(d);}}
+function spClass(s){var sl=(s||'').toLowerCase();return sl.indexOf('paid')>-1?'sp-paid':sl.indexOf('ship')>-1?'sp-shipped':'sp-packed';}
+function vcColor(v){return VC[v]||VC[(v||'').replace(' - Sell Your Books','')]||'#888';}
+
+// ── PICK SCREEN ──────────────────────────
+function loadHaulList(){
+  var el=document.getElementById('haul-list');
+  el.innerHTML='<div class="msg"><span class="spinner"></span>Loading…</div>';
+  fetch(SCRIPT_URL+'?view=hauls')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(!d.hauls||!d.hauls.length){el.innerHTML='<div class="msg err">No hauls found</div>';return;}
+      var h='<div class="haul-item" onclick="loadAllScans()" style="background:rgba(255,107,53,0.04)">'+
+        '<div class="haul-name" style="color:var(--accent)">📱 All Scans</div>'+
+        '<div class="haul-meta">every book scanned</div><div class="haul-arrow">›</div></div>';
+      d.hauls.forEach(function(x){
+        h+='<div class="haul-item" onclick="loadHaul(\''+encodeURIComponent(x.name)+'\',\''+x.name.replace(/'/g,"\\'")+'\')">'+
+          '<div class="haul-name">'+x.name+'</div>'+
+          '<div class="haul-meta">'+x.books+' · <b>'+fmt(x.value)+'</b></div>'+
+          '<div class="haul-arrow">›</div></div>';
+      });
+      el.innerHTML=h;
+    })
+    .catch(function(){el.innerHTML='<div class="msg err">Could not reach sheet</div>';});
+}
+
+function loadHaul(enc,name){
+  var el=document.getElementById('haul-list');
+  el.innerHTML='<div class="msg"><span class="spinner"></span>Loading '+name+'…</div>';
+  fetch(SCRIPT_URL+'?view=haul&name='+enc)
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(!d.books||!d.books.length){el.innerHTML='<div class="msg err">No books</div>';setTimeout(loadHaulList,1500);return;}
+      BOOKS=d.books.map(norm);isAllScans=false;
+      loadBackground();showApp(name);
+    })
+    .catch(function(e){el.innerHTML='<div class="msg err">'+e+'</div>';setTimeout(loadHaulList,2000);});
+}
+
+function loadAllScans(){
+  var el=document.getElementById('haul-list');
+  el.innerHTML='<div class="msg"><span class="spinner"></span>Loading all scans…</div>';
+  fetch(SCRIPT_URL+'?view=scans&limit=999')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(!d.scans||!d.scans.length){el.innerHTML='<div class="msg err">No scans</div>';setTimeout(loadHaulList,1500);return;}
+      BOOKS=d.scans.map(function(r){
+        return norm({isbn:String(r.isbn||''),title:String(r.title||''),author:String(r.author||''),
+          vendor:String(r.vendor||'No Offer'),offer:parseFloat(r.offer)||0,
+          amazon:parseFloat(r.amazonPrice)||0,rank:parseFloat(r.rank)||0,
+          ebayNet:parseFloat(r.ebayNet)||0,verdict:String(r.verdict||''),status:String(r.status||''),
+          ebay:String(r.status||'')==='EBAY HOLD'||String(r.verdict||'').indexOf('EBAY')>-1,
+          ebay_source:String(r.verdict||'').indexOf('Hot')>-1?'HOT':'PRICE GAP'});
+      });
+      isAllScans=true;
+      loadBackground();showApp('All Scans');
+    })
+    .catch(function(e){el.innerHTML='<div class="msg err">'+e+'</div>';setTimeout(loadHaulList,2000);});
+}
+
+function loadBackground(){
+  // Load boxes
+  fetch(SCRIPT_URL+'?view=boxes').then(function(r){return r.json();}).then(function(d){BOXES=d.boxes||[];if(curTab==='shipped')renderShipped();}).catch(function(){});
+  // Load full scan history for dupe detection
+  fetch(SCRIPT_URL+'?view=scans&limit=999').then(function(r){return r.json();}).then(function(d){
+    HISTORY={};
+    (d.scans||[]).forEach(function(r){
+      var isbn=String(r.isbn||'').replace(/\D/g,'');if(!isbn)return;
+      if(!HISTORY[isbn])HISTORY[isbn]=[];
+      HISTORY[isbn].push({date:fmtD(r.date),vendor:String(r.vendor||'').replace(' - Sell Your Books',''),
+        offer:parseFloat(r.offer)||0,status:String(r.status||''),box:String(r.box||'')});
+    });
+    if(curTab==='scans')renderBooks();
+  }).catch(function(){});
+}
+
+function norm(b){
+  var v=(b.vendor||'').replace(' - Sell Your Books','');
+  var verdict=String(b.verdict||''),status=String(b.status||'');
+  return {isbn:String(b.isbn||''),title:String(b.title||''),author:String(b.author||''),
+    vendor:v,offer:parseFloat(b.offer)||0,amazon:parseFloat(b.amazon||b.amazonPrice)||0,
+    rank:parseFloat(b.rank)||0,
+    cover:'https://pictures.abebooks.com/isbn/'+String(b.isbn||'')+'-us-300.jpg',
+    ebay:b.ebay||(status==='EBAY HOLD')||verdict.indexOf('EBAY')>-1,
+    ebay_source:String(b.ebay_source||''),ebay_net:parseFloat(b.ebayNet||b.ebay_net)||0};
+}
+
+// CSV upload
+var dz=document.getElementById('dz'),fi=document.getElementById('fi');
+dz.addEventListener('dragover',function(e){e.preventDefault();dz.classList.add('over');});
+dz.addEventListener('dragleave',function(){dz.classList.remove('over');});
+dz.addEventListener('drop',function(e){e.preventDefault();dz.classList.remove('over');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0]);});
+fi.addEventListener('change',function(){if(fi.files[0])handleFile(fi.files[0]);});
+
+function handleFile(file){
+  // ThriftBooks HTML?
+  if(file.name.endsWith('.html')||file.name.endsWith('.htm')){parseTBHtml(file);return;}
+  // CSV
+  Papa.parse(file,{header:true,skipEmptyLines:true,complete:function(res){
+    BOOKS=res.data.map(function(r){
+      var v=(r['Best Vendor']||r['vendor']||r['Vendor']||'No Offer').replace(' - Sell Your Books','');
+      var verdict=r['Verdict']||r['verdict']||'',status=r['Status']||r['status']||'';
+      return norm({isbn:r['ISBN']||r['isbn']||'',title:r['Title']||r['title']||'',
+        author:r['Author']||r['author']||'',vendor:v,
+        offer:parseFloat(r['Best Offer']||r['offer']||0)||0,
+        amazon:parseFloat(r['Amazon Price']||r['amazon']||0)||0,
+        rank:parseFloat(r['Amazon Rank']||r['rank']||0)||0,
+        ebayNet:parseFloat(r['eBay Net']||r['ebayNet']||0)||0,
+        verdict:verdict,status:status,
+        ebay:status==='EBAY HOLD'||verdict.indexOf('EBAY')>-1,
+        ebay_source:verdict.indexOf('Hot')>-1?'HOT':'PRICE GAP'});
+    }).filter(function(b){return b.isbn;});
+    if(!BOOKS.length){alert('No books found.');return;}
+    isAllScans=false;loadBackground();showApp(file.name.replace('.csv',''));
+  }});
+}
+
+// ThriftBooks HTML parser
+function parseTBHtml(file){
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var html=e.target.result;
+    var match=html.match(/<script id="__NEXT_DATA__"[^>]*>(.*?)<\/script>/s);
+    if(!match){alert('Could not find ThriftBooks data in HTML. Make sure you saved the full page.');return;}
+    try{
+      var data=JSON.parse(match[1]);
+      var sl=data.props.pageProps.data.sellList;
+      if(!Array.isArray(sl)||!sl.length){alert('No sell list items found.');return;}
+      TB_PRICES={};
+      var count=0,total=0;
+      sl.forEach(function(item){
+        var isbn=String(item.userEnteredIdentifier||'').replace(/\D/g,'');
+        var price=parseFloat(item.quotePrice)||0;
+        if(isbn){TB_PRICES[isbn]=price;if(price>0){count++;total+=price;}}
+      });
+      // Merge into current books if loaded
+      if(BOOKS.length){
+        var upgraded=0;
+        BOOKS.forEach(function(b){
+          var isbn=String(b.isbn||'').replace(/\D/g,'');
+          var tbp=TB_PRICES[isbn]||0;
+          if(tbp>0){
+            b.tbPrice=tbp;
+            // If TB beats current offer, show it
+            if(tbp>(b.offer||0)){b.tbUpgrade=true;upgraded++;}
+          }
+        });
+        alert('ThriftBooks loaded: '+sl.length+' books, '+count+' with offers ($'+total.toFixed(2)+').\n'+upgraded+' books where TB pays more than BookScouter.');
+        renderBooks();
+      } else {
+        alert('ThriftBooks prices loaded ('+count+' offers). Now load a haul CSV to merge.');
+      }
+    }catch(err){alert('Parse error: '+err);}
+  };
+  reader.readAsText(file);
+}
+
+// ── APP ──────────────────────────────────
+function showApp(name){
+  document.getElementById('pick-screen').style.display='none';
+  document.getElementById('app').style.cssText='display:flex;flex-direction:column;height:100%';
+  document.title='BookSort — '+name;
+  buildFilters();renderBooks();renderActions();
+}
+function goBack(){
+  BOOKS=[];BOXES=[];HISTORY={};TB_PRICES={};visibleBooks=[];dashData=null;
+  curFilter='ALL';curSort='alpha';curSearch='';curTab='scans';isAllScans=false;
+  document.getElementById('search').value='';
+  document.getElementById('app').style.display='none';
+  document.getElementById('pick-screen').style.display='flex';
+  document.getElementById('scans-ctrl').style.display='block';
+  document.querySelectorAll('.app-tab').forEach(function(t,i){t.classList.toggle('active',i===0);});
+  document.querySelectorAll('.page').forEach(function(p,i){p.classList.toggle('active',i===0);});
+  document.title='BookSort';
+  loadHaulList();
+}
+
+function switchTab(tab,el){
+  curTab=tab;
+  document.querySelectorAll('.app-tab').forEach(function(t){t.classList.remove('active');});
+  el.classList.add('active');
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  document.getElementById('page-'+tab).classList.add('active');
+  document.getElementById('scans-ctrl').style.display=tab==='scans'?'block':'none';
+  if(tab==='shipped')renderShipped();
+  if(tab==='dashboard')renderDashboard();
+  if(tab==='actions')renderActions();
+}
+
+// ── ISBN COPY ─────────────────────────────
+function copyISBNs(){
+  var isbns=BOOKS.map(function(b){return b.isbn;}).filter(Boolean).join(',');
+  navigator.clipboard.writeText(isbns).then(function(){
+    var btn=document.getElementById('copy-isbn-btn');
+    btn.textContent='✓ Copied!';btn.classList.add('copied');
+    document.getElementById('isbn-copy-label').textContent=BOOKS.length+' ISBNs copied — paste into ThriftBooks';
+    setTimeout(function(){btn.textContent='Copy All ISBNs';btn.classList.remove('copied');},3000);
+  }).catch(function(){
+    // Fallback
+    var ta=document.createElement('textarea');ta.value=isbns;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    var btn=document.getElementById('copy-isbn-btn');btn.textContent='✓ Copied!';btn.classList.add('copied');
+    setTimeout(function(){btn.textContent='Copy All ISBNs';btn.classList.remove('copied');},3000);
+  });
+}
+
+// ── SCANS ─────────────────────────────────
+function buildFilters(){
+  var vendors={};
+  BOOKS.forEach(function(b){
+    if(b.ebay){vendors['EBAY']=(vendors['EBAY']||0)+1;return;}
+    var v=b.vendor||'No Offer';vendors[v]=(vendors[v]||0)+1;
+  });
+  var noOffer=vendors['No Offer']||0;delete vendors['No Offer'];
+  var h='<button class="pill active" data-v="ALL">All</button><button class="pill" data-v="EBAY">🟠 eBay</button>';
+  Object.keys(vendors).sort(function(a,b){return vendors[b]-vendors[a];}).forEach(function(v){
+    h+='<button class="pill" data-v="'+v+'">'+v+'</button>';
+  });
+  if(noOffer)h+='<button class="pill" data-v="NO OFFER">No Offer</button>';
+  document.getElementById('filters').innerHTML=h;
+  document.getElementById('filters').addEventListener('click',function(e){
+    var p=e.target.closest('.pill');if(!p)return;
+    document.querySelectorAll('.pill').forEach(function(x){x.classList.remove('active');});
+    p.classList.add('active');curFilter=p.dataset.v;renderBooks();
+  });
+}
+
+function getFiltered(){
+  var books=BOOKS.slice();
+  // In All Scans view — deduplicate by ISBN, keep most recent (first occurrence)
+  if(isAllScans){
+    var seen={};
+    books=books.filter(function(b){
+      var isbn=String(b.isbn||'').replace(/\D/g,'');
+      if(seen[isbn])return false;
+      seen[isbn]=true;return true;
+    });
+  }
+  var q=curSearch.toLowerCase();
+  if(q)books=books.filter(function(b){return(b.title||'').toLowerCase().indexOf(q)>-1||(b.author||'').toLowerCase().indexOf(q)>-1||(b.isbn||'').indexOf(q)>-1;});
+  if(curFilter==='EBAY')books=books.filter(function(b){return b.ebay;});
+  else if(curFilter==='NO OFFER')books=books.filter(function(b){return !b.offer&&!b.ebay;});
+  else if(curFilter!=='ALL')books=books.filter(function(b){return !b.ebay&&b.vendor===curFilter;});
+  books.sort(function(a,b){
+    var ka=curSort==='offer'?-(a.offer||0):curSort==='rank'?(a.rank||9999999):(a.title||'').replace(/^(The |A |An )/i,'').toUpperCase();
+    var kb=curSort==='offer'?-(b.offer||0):curSort==='rank'?(b.rank||9999999):(b.title||'').replace(/^(The |A |An )/i,'').toUpperCase();
+    return ka<kb?-1:ka>kb?1:0;
+  });
+  return books;
+}
+
+function setSort(s,btn){curSort=s;document.querySelectorAll('.sort-btns button').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');renderBooks();}
+
+function renderBooks(){
+  var books=getFiltered();visibleBooks=books;
+  var total=books.reduce(function(s,b){return s+(b.offer||0);},0);
+  document.getElementById('vc').textContent=books.length;
+  document.getElementById('vv').textContent=fmt(total);
+  document.getElementById('rl').textContent=books.length+' books';
+  if(!books.length){document.getElementById('book-list').innerHTML='<div class="empty">📭<br>No books found</div>';return;}
+  var html='',lastLtr='';
+  for(var i=0;i<books.length;i++){
+    var b=books[i];
+    var isbn=String(b.isbn||'').replace(/\D/g,'');
+    var hist=HISTORY[isbn]||[];
+    var prevSold=hist.filter(function(h){return h.status==='Shipped'||h.status==='Paid';});
+    var isDupe=prevSold.length>0;
+    var tbP=TB_PRICES[isbn]||b.tbPrice||0;
+    var tbBetter=tbP>(b.offer||0)&&tbP>0;
+    if(curSort==='alpha'){
+      var t=(b.title||'').replace(/^(The |A |An )/i,'');
+      var ltr=t[0]?t[0].toUpperCase():'#';if(!/[A-Z]/.test(ltr))ltr='#';
+      if(ltr!==lastLtr){html+='<div class="letter-div">'+ltr+'</div>';lastLtr=ltr;}
+    }
+    var bdg=badge(b),lbl=label(b);
+    var cov=b.cover?'<img src="'+b.cover+'" alt="" loading="lazy" onerror="this.parentNode.innerHTML=\'<div class=cover-ph>📚</div>\'">':'<div class="cover-ph">📚</div>';
+    html+='<div class="book-card'+(isDupe?' dupe':'')+'" onclick="openDrawer('+i+')">'+
+      '<div class="cover">'+cov+'</div>'+
+      '<div class="binfo">'+
+        '<div class="btitle">'+(b.title||'ISBN: '+b.isbn)+'</div>'+
+        '<div class="bauthor">'+(b.author||'—')+'</div>'+
+        '<div class="bmeta">'+
+          '<span class="vbadge '+bdg+'">'+lbl+'</span>'+
+          (b.offer?'<span class="offer">'+fmt(b.offer)+'</span>':'<span class="offer zero">no offer</span>')+
+          (b.amazon?'<span class="amz">amz $'+b.amazon.toFixed(0)+'</span>':'')+
+          rdot(b.rank)+
+          (isDupe?'<span class="dupe-tag">sold before</span>':'')+
+          (tbBetter?'<span class="tb-tag">TB: '+fmt(tbP)+'</span>':tbP>0?'<span class="tb-tag" style="opacity:0.6">TB: '+fmt(tbP)+'</span>':'')+
+        '</div>'+
+      '</div></div>';
+  }
+  document.getElementById('book-list').innerHTML=html;
+}
+
+// ── DASHBOARD ─────────────────────────────
+var dashView='alltime',dashData=null;
+function renderDashboard(){
+  var el=document.getElementById('dash-content');
+  if(dashData){buildDashHTML(el,dashData);return;}
+  el.innerHTML='<div class="msg"><span class="spinner"></span>Loading stats…</div>';
+  fetch(SCRIPT_URL+'?view=dashboard')
+    .then(function(r){return r.json();})
+    .then(function(d){dashData=d;buildDashHTML(el,d);})
+    .catch(function(e){el.innerHTML='<div class="msg err">Could not load: '+e+'</div>';});
+}
+function setDashView(v){dashView=v;if(dashData)buildDashHTML(document.getElementById('dash-content'),dashData);}
+function buildDashHTML(el,d){
+  var html='<div style="display:flex;background:var(--s1);border-bottom:1px solid var(--border)">'+
+    '<div style="flex:1;padding:10px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;border-bottom:2px solid '+(dashView==='alltime'?'var(--accent)':'transparent')+';color:'+(dashView==='alltime'?'var(--text)':'var(--muted)')+'" onclick="setDashView(\'alltime\')">ALL TIME</div>'+
+    '<div style="flex:1;padding:10px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;border-bottom:2px solid '+(dashView==='haul'?'var(--accent)':'transparent')+';color:'+(dashView==='haul'?'var(--text)':'var(--muted)')+'" onclick="setDashView(\'haul\')">BY HAUL</div>'+
+  '</div>';
+  html+=dashView==='alltime'?buildAlltimeDash(d):buildHaulDash(d);
+  el.innerHTML=html;
+}
+function buildAlltimeDash(d){
+  var vendorKeys=Object.keys(d.vendorTotals||{}).sort(function(a,b){return d.vendorTotals[b]-d.vendorTotals[a];});
+  var maxV=vendorKeys.length?d.vendorTotals[vendorKeys[0]]:1;
+  var html=
+    '<div class="dash-grid">'+
+      '<div class="dash-card span2">'+
+        '<div class="dash-label">Total Profit</div>'+
+        '<div class="dash-val '+(d.totalProfit>=0?'green':'red')+'">'+fmt(d.totalProfit)+'</div>'+
+        '<div class="dash-sub">'+fmt(d.totalValue)+' value · '+fmt(d.totalCost)+' cost</div>'+
+      '</div>'+
+      '<div class="dash-card"><div class="dash-label">Books Scanned</div><div class="dash-val">'+d.totalScans+'</div><div class="dash-sub">'+d.fillRate+'% with offers</div></div>'+
+      '<div class="dash-card"><div class="dash-label">Avg per Book</div><div class="dash-val accent">'+fmt(d.avgPerBook)+'</div><div class="dash-sub">when offer exists</div></div>'+
+      '<div class="dash-card"><div class="dash-label">Paid Out</div><div class="dash-val green">'+fmt(d.totalPaid)+'</div>'+
+        '<div class="dash-sub">'+(d.payoutDiff>=0?'+':'')+fmt(d.payoutDiff)+' vs expected</div></div>'+
+      '<div class="dash-card"><div class="dash-label">In Pipeline</div><div class="dash-val blue">'+d.toShip+'</div><div class="dash-sub">'+d.ebayHolds+' eBay · '+d.shipped+' shipped</div></div>'+
+      (d.bestDay?'<div class="dash-card"><div class="dash-label">Best Day</div><div class="dash-val accent">'+fmt(d.bestDay.profit)+'</div><div class="dash-sub">'+d.bestDay.date+' · '+d.bestDay.books+' books</div></div>':'')+
+      (d.avgHaulValue?'<div class="dash-card"><div class="dash-label">Avg Haul Value</div><div class="dash-val">'+fmt(d.avgHaulValue)+'</div><div class="dash-sub">per outlet run</div></div>':'')+
+    '</div>';
+  // TB status
+  html+=d.thriftbooksInTransit
+    ?'<div style="margin:8px 16px;padding:11px 14px;border-radius:8px;display:flex;align-items:center;gap:10px;background:rgba(232,196,74,0.08);border:1px solid rgba(232,196,74,0.25)"><div style="width:7px;height:7px;border-radius:50%;background:var(--yellow);flex-shrink:0"></div><div><div style="font-size:12px;font-weight:700">ThriftBooks In Transit</div><div style="font-size:10px;color:var(--muted);font-family:\'DM Mono\',monospace">'+d.thriftbooksConf+' · Must process before next</div></div></div>'
+    :'<div style="margin:8px 16px;padding:11px 14px;border-radius:8px;display:flex;align-items:center;gap:10px;background:rgba(74,232,158,0.06);border:1px solid rgba(74,232,158,0.18)"><div style="width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0"></div><div style="font-size:12px;font-weight:700;color:var(--green)">ThriftBooks Ready</div></div>';
+  // 30-day chart
+  if(d.byDay&&d.byDay.length){
+    var maxP=Math.max.apply(null,d.byDay.map(function(x){return Math.abs(x.profit)||0.01;}));
+    html+='<div class="section-hdr">DAILY PROFIT — 30 DAYS</div><div class="day-chart"><div class="day-bars">';
+    d.byDay.forEach(function(day){
+      var h=Math.max(3,Math.round((Math.abs(day.profit)/maxP)*76));
+      html+='<div class="day-bar-wrap">'+
+        '<div class="day-bar" style="height:'+h+'px;background:'+(day.profit>=0?'var(--accent)':'var(--red)')+'" title="'+day.date+' · '+fmt(day.profit)+'"></div>'+
+        '<div class="day-label">'+day.date.replace(/[A-Za-z]+ /,'')+'</div></div>';
+    });
+    html+='</div></div>';
+  }
+  // Vendor revenue
+  if(vendorKeys.length){
+    html+='<div class="section-hdr">REVENUE BY VENDOR</div>';
+    vendorKeys.slice(0,10).forEach(function(v){
+      var pct=Math.round((d.vendorTotals[v]/maxV)*100);
+      html+='<div class="vbar-row"><div class="vbar-name">'+v+'</div>'+
+        '<div class="vbar-track"><div class="vbar-fill" style="width:'+pct+'%;background:'+vcColor(v)+'"></div></div>'+
+        '<div class="vbar-val">'+fmt(d.vendorTotals[v])+'</div></div>';
+    });
+  }
+  // Vendor reliability
+  var relKeys=Object.keys(d.vendorReliability||{});
+  if(relKeys.length){
+    html+='<div class="section-hdr">VENDOR RELIABILITY (paid vs expected)</div>';
+    relKeys.forEach(function(v){
+      var rel=d.vendorReliability[v];
+      var pct=rel.expected>0?Math.round((rel.paid/rel.expected)*100):0;
+      var color=pct>=100?'var(--green)':pct>=90?'var(--yellow)':'var(--red)';
+      html+='<div class="vbar-row"><div class="vbar-name">'+v+'</div>'+
+        '<div style="flex:1;font-family:\'DM Mono\',monospace;font-size:11px;color:'+color+'">'+pct+'% · '+fmt(rel.paid)+'/'+fmt(rel.expected)+'</div>'+
+        '<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:var(--muted)">'+rel.boxes+'x</div></div>';
+    });
+  }
+  return html;
+}
+function buildHaulDash(d){
+  var hauls=d.byHaul||[];
+  if(!hauls.length)return '<div class="empty">No hauls yet</div>';
+  var maxVal=Math.max.apply(null,hauls.map(function(h){return h.value||0.01;}));
+  var html='<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px 6px">'+
+    '<span style="font-size:10px;color:var(--muted);font-family:\'DM Mono\',monospace;text-transform:uppercase;letter-spacing:1px">'+hauls.length+' hauls</span>'+
+    '<span style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--accent)">avg '+fmt(d.avgHaulValue||0)+'</span>'+
+  '</div>';
+  if(d.bestHaul){
+    html+='<div style="margin:0 16px 10px;padding:11px 14px;border-radius:8px;background:rgba(255,107,53,0.07);border:1px solid rgba(255,107,53,0.2)">'+
+      '<div style="font-size:9px;font-weight:700;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px">Best Haul</div>'+
+      '<div style="font-size:14px;font-weight:800;margin-bottom:2px">'+d.bestHaul.name.replace('Haul ','')+'</div>'+
+      '<div style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--muted)">'+d.bestHaul.books+' books · '+fmt(d.bestHaul.value)+' · '+fmt(d.bestHaul.profit)+' profit</div>'+
+    '</div>';
+  }
+  html+='<div class="section-hdr">VALUE PER HAUL — tap to load</div><div style="padding:4px 0">';
+  hauls.slice(0,20).forEach(function(h){
+    var pct=Math.round((h.value/maxVal)*100);
+    var pc=h.profit>=0?'var(--green)':'var(--red)';
+    html+='<div style="display:flex;align-items:center;gap:8px;padding:6px 16px;cursor:pointer;border-bottom:0.5px solid var(--border)" onclick="showApp(\''+h.name.replace(/'/g,"\\'")+'\');BOOKS=[];loadHaul(\''+encodeURIComponent(h.name)+'\',\''+h.name.replace(/'/g,"\\'")+'\')">'+
+      '<div style="width:90px;font-family:\'DM Mono\',monospace;font-size:10px;color:var(--muted);flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+h.name.replace('Haul ','')+'</div>'+
+      '<div style="flex:1;background:var(--border);border-radius:2px;height:4px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:var(--accent);border-radius:2px"></div></div>'+
+      '<div style="font-family:\'DM Mono\',monospace;font-size:11px;width:42px;text-align:right;color:var(--accent)">'+fmt(h.value)+'</div>'+
+      '<div style="font-family:\'DM Mono\',monospace;font-size:11px;width:46px;text-align:right;color:'+pc+'">'+fmt(h.profit)+'</div>'+
+      '<div style="color:var(--muted);font-size:12px;padding-left:2px">›</div>'+
+    '</div>';
+  });
+  html+='</div>';
+  return html;
+}
+
+// ── SHIPPED ───────────────────────────────
+function renderShipped(){
+  if(!BOXES.length){document.getElementById('shipped-list').innerHTML='<div class="empty">📦<br>No boxes yet</div>';return;}
+  var boxes=BOXES.filter(function(b){return b.status;}).sort(function(a,b){return(b.datePacked||'')>(a.datePacked||'')?1:-1;});
+  var totExp=boxes.reduce(function(s,b){return s+(parseFloat(b.expectedValue)||0);},0);
+  var totPaid=boxes.reduce(function(s,b){return s+(parseFloat(b.actualPaid)||0);},0);
+  var html='<div style="display:flex;gap:1px;background:var(--border);margin-bottom:1px">'+
+    '<div style="flex:1;background:var(--s1);padding:12px;text-align:center">'+
+      '<div style="font-family:\'DM Mono\',monospace;font-size:17px;color:var(--accent)">'+fmt(totExp)+'</div>'+
+      '<div style="font-size:9px;color:var(--muted);font-family:\'Syne\',sans-serif;font-weight:700;text-transform:uppercase;margin-top:2px">Expected</div>'+
+    '</div>'+
+    '<div style="flex:1;background:var(--s1);padding:12px;text-align:center">'+
+      '<div style="font-family:\'DM Mono\',monospace;font-size:17px;color:var(--green)">'+fmt(totPaid)+'</div>'+
+      '<div style="font-size:9px;color:var(--muted);font-family:\'Syne\',sans-serif;font-weight:700;text-transform:uppercase;margin-top:2px">Received</div>'+
+    '</div>'+
+    '<div style="flex:1;background:var(--s1);padding:12px;text-align:center">'+
+      '<div style="font-family:\'DM Mono\',monospace;font-size:17px">'+boxes.length+'</div>'+
+      '<div style="font-size:9px;color:var(--muted);font-family:\'Syne\',sans-serif;font-weight:700;text-transform:uppercase;margin-top:2px">Boxes</div>'+
+    '</div>'+
+  '</div>';
+  boxes.forEach(function(box){
+    var vend=(box.vendor||'').replace(' - Sell Your Books','');
+    var exp=parseFloat(box.expectedValue)||0,paid=parseFloat(box.actualPaid)||0;
+    var diff=paid-exp;
+    html+='<div class="box-card" onclick="openBoxDrill(\''+String(box.boxId).replace(/'/g,"\\'")+'\')" >'+
+      '<div class="box-head">'+
+        '<div><div class="box-id">'+box.boxId+'</div><div class="box-vendor">'+vend+'</div></div>'+
+        '<div style="flex:1;text-align:right"><div class="box-val">'+fmt(exp)+'</div>'+
+          (paid>0?'<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:'+(diff>=0?'var(--green)':'var(--red)')+'">paid '+fmt(paid)+'</div>':'')+
+        '</div>'+
+        '<span class="spill '+spClass(box.status)+'">'+box.status+'</span>'+
+        '<div class="box-arrow">›</div>'+
+      '</div>'+
+      '<div class="box-stats">'+
+        '<div class="bstat"><div class="bstat-val">'+box.bookCount+'</div><div class="bstat-lbl">Books</div></div>'+
+        (box.datePacked?'<div class="bstat"><div class="bstat-val">'+fmtD(box.datePacked)+'</div><div class="bstat-lbl">Packed</div></div>':'')+
+        (box.dateShipped?'<div class="bstat"><div class="bstat-val">'+fmtD(box.dateShipped)+'</div><div class="bstat-lbl">Shipped</div></div>':'')+
+        (box.tracking?'<div class="bstat"><div class="bstat-val" style="font-size:10px;color:var(--blue)">'+box.tracking+'</div><div class="bstat-lbl">Tracking</div></div>':'')+
+      '</div>'+
+    '</div>';
+  });
+  document.getElementById('shipped-list').innerHTML=html;
+}
+
+function openBoxDrill(boxId){
+  document.getElementById('dc').innerHTML='<div class="msg"><span class="spinner"></span>Loading…</div>';
+  document.getElementById('overlay').className='overlay open';
+  document.getElementById('drawer').className='drawer open';
+  fetch(SCRIPT_URL+'?view=boxbooks&box='+encodeURIComponent(boxId))
+    .then(function(r){return r.json();})
+    .then(function(d){
+      var box=BOXES.find(function(b){return String(b.boxId)===String(boxId);})||{};
+      var vend=(box.vendor||'').replace(' - Sell Your Books','');
+      var bks=d.books||[];
+      var diff=(parseFloat(box.actualPaid)||0)-(parseFloat(box.expectedValue)||0);
+      var html='<div style="margin-bottom:14px">'+
+        '<div style="font-size:11px;color:var(--muted);font-family:\'DM Mono\',monospace;margin-bottom:2px">'+boxId+'</div>'+
+        '<div style="font-size:19px;font-weight:800;margin-bottom:8px">'+vend+'</div>'+
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+          '<span class="spill '+spClass(box.status)+'">'+box.status+'</span>'+
+          (box.dateShipped?'<span style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--muted)">shipped '+fmtD(box.dateShipped)+'</span>':'')+
+          (box.tracking?'<span style="font-family:\'DM Mono\',monospace;font-size:11px;color:var(--blue)">'+box.tracking+'</span>':'')+
+        '</div></div>'+
+        '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);margin-bottom:4px">'+
+          '<span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">'+bks.length+' books</span>'+
+          '<span style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--accent)">'+fmt(box.expectedValue)+' expected</span>'+
+        '</div>';
+      bks.forEach(function(b){
+        html+='<div class="box-book-row"><div class="bbook-title">'+(b.title||b.isbn)+'</div><div class="bbook-price">'+fmt(b.offer)+'</div></div>';
+      });
+      if(box.actualPaid){
+        html+='<div style="padding:12px 0;border-top:1px solid var(--border);margin-top:4px;display:flex;justify-content:space-between;align-items:center">'+
+          '<span style="font-size:13px;font-weight:700">Paid Out</span>'+
+          '<div style="text-align:right">'+
+            '<div style="font-family:\'DM Mono\',monospace;font-size:16px;color:var(--green)">'+fmt(box.actualPaid)+'</div>'+
+            '<div style="font-family:\'DM Mono\',monospace;font-size:10px;color:'+(diff>=0?'var(--green)':'var(--red)')+'">'+
+              (diff>=0?'+':'')+fmt(diff)+' vs expected</div>'+
+          '</div></div>';
+      }
+      document.getElementById('dc').innerHTML=html;
+    })
+    .catch(function(){document.getElementById('dc').innerHTML='<div class="msg err">Could not load box</div>';});
+}
+
+// ── ACTIONS ───────────────────────────────
+var ACTION_LIST=[
+  {id:'process_latest',icon:'📧',title:'Process Latest Email',desc:'Fetch prices for newest BookScouter haul email'},
+  {id:'process_all',icon:'📬',title:'Process All Unread',desc:'Fetch prices for all unread haul emails'},
+  {id:'vendor_confirmations',icon:'🏪',title:'Vendor Confirmations',desc:"Check Gmail for Powell's, WoB, ThriftBooks confirmations"},
+  {id:'import_tb',icon:'📥',title:'Import ThriftBooks HTML',desc:'Parse latest TB HTML from BookSort/ThriftBooks HTML Drive folder'},
+  {id:'rebuild_summary',icon:'📊',title:'Rebuild Summary',desc:'Recalculate P&L dashboard in Google Sheet'},
+  {id:'fetch_prices',icon:'⚡',title:'Fetch Prices (active sheet)',desc:'Re-run price lookup on current active sheet'},
+];
+var actionStates={};
+
+function renderActions(){
+  var html='<div class="action-section">Run from your phone</div>';
+  ACTION_LIST.forEach(function(a){
+    var st=actionStates[a.id]||{};
+    var cls='action-btn'+(st.running?' running':'')+(st.ok?' success':'')+(st.err?' error':'');
+    var stHtml=st.running?'<span class="action-status run"><span class="spinner"></span></span>':
+               st.ok?'<span class="action-status ok">✓ '+st.msg+'</span>':
+               st.err?'<span class="action-status err">✗ Error</span>':'';
+    html+='<button class="'+cls+'" onclick="runAction(\''+a.id+'\')">'+
+      '<div class="action-icon">'+a.icon+'</div>'+
+      '<div class="action-info"><div class="action-title">'+a.title+'</div><div class="action-desc">'+a.desc+'</div></div>'+
+      stHtml+
+    '</button>';
+  });
+  html+='<div class="action-section" style="margin-top:24px">ThriftBooks Workflow</div>'+
+  '<div style="background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:8px">'+
+    '<div style="font-size:13px;font-weight:700;margin-bottom:6px">1. Copy ISBNs → Paste into ThriftBooks</div>'+
+    '<div style="font-size:11px;color:var(--muted);font-family:\'DM Mono\',monospace;margin-bottom:10px">Go to SCANS tab → tap "Copy All ISBNs" → paste at thriftbooks.com/buyback</div>'+
+    '<div style="font-size:13px;font-weight:700;margin-bottom:6px">2. Save the TB page as HTML</div>'+
+    '<div style="font-size:11px;color:var(--muted);font-family:\'DM Mono\',monospace;margin-bottom:10px">After prices load: File → Save Page As → Webpage, Complete</div>'+
+    '<div style="font-size:13px;font-weight:700;margin-bottom:6px">3. Drop the HTML into the pick screen</div>'+
+    '<div style="font-size:11px;color:var(--muted);font-family:\'DM Mono\',monospace">TB prices will merge automatically. Green TB badge = TB pays more.</div>'+
+  '</div>';
+  document.getElementById('action-grid').innerHTML=html;
+}
+
+function runAction(id){
+  actionStates[id]={running:true};renderActions();
+  fetch(SCRIPT_URL+'?view=action&act='+id)
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){actionStates[id]={ok:true,msg:d.msg||'Done'};}
+      else{actionStates[id]={err:true,msg:d.error||'Error'};}
+      renderActions();
+      // After processing email, reload haul list
+      if(id==='process_latest'||id==='process_all') setTimeout(function(){if(curTab==='actions'){}},2000);
+    })
+    .catch(function(e){actionStates[id]={err:true,msg:String(e)};renderActions();});
+}
+
+// ── BOOK DRAWER ───────────────────────────
+function openDrawer(idx){
+  var b=visibleBooks[idx];if(!b)return;
+  var bdg=badge(b),lbl=label(b);
+  var isbn=String(b.isbn||'').replace(/\D/g,'');
+  var hist=HISTORY[isbn]||[];
+  var prevSold=hist.filter(function(h){return h.status==='Shipped'||h.status==='Paid';});
+  var tbP=TB_PRICES[isbn]||b.tbPrice||0;
+  var allScans=isAllScans?hist:null;
+
+  var cov=b.cover?'<img src="'+b.cover+'" alt="" onerror="this.src=\'\'">':'<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:30px">📚</div>';
+  var rl=!b.rank?'No data':b.rank<100000?'#'+b.rank.toLocaleString()+' 🔥 Hot':b.rank<500000?'#'+b.rank.toLocaleString()+' ⚡ Medium':b.rank<2000000?'#'+b.rank.toLocaleString()+' Slow':'#'+b.rank.toLocaleString()+' Cold';
+  var act=b.ebay?'<div class="daction da-ebay">SET ASIDE — LIST ON EBAY<br><small style="font-size:10px;opacity:.7">Est. net '+fmt(b.ebay_net)+'</small></div>':
+    b.offer?'<div class="daction da-vendor">BOX FOR '+lbl.toUpperCase()+'</div>':
+    '<div class="daction da-donate">DONATE / BULK BUYER</div>';
+
+  // ThriftBooks row
+  var tbRow=tbP>0?'<div class="drow"><span class="dlabel">ThriftBooks</span>'+
+    '<span class="dval" style="color:'+(tbP>b.offer?'var(--thriftbooks)':'var(--muted)')+'">'+fmt(tbP)+
+    (tbP>b.offer?' ↑ better':'')+
+    '</span></div>':'';
+
+  // Prev sold history
+  var histHtml='';
+  if(prevSold.length>0){
+    histHtml='<div class="dsec">📦 Previously Sold ('+prevSold.length+'x)</div>';
+    prevSold.slice(0,5).forEach(function(h){
+      histHtml+='<div class="hist-row">'+
+        '<div><div class="hist-vendor">'+h.vendor+'</div><div class="hist-date">'+h.date+(h.box?' · '+h.box:'')+'</div></div>'+
+        '<div style="text-align:right"><div class="hist-price">'+fmt(h.offer)+'</div>'+
+          '<span class="hist-status '+spClass(h.status)+'" style="font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px">'+h.status+'</span></div>'+
+      '</div>';
+    });
+  }
+
+  // In All Scans view — show all scan dates for this ISBN
+  var allScansHtml='';
+  if(isAllScans&&hist.length>1){
+    allScansHtml='<div class="dsec">All Scans ('+hist.length+')</div>';
+    hist.slice(0,6).forEach(function(h){
+      allScansHtml+='<div class="hist-row">'+
+        '<div><div class="hist-vendor">'+h.vendor+'</div><div class="hist-date">'+h.date+'</div></div>'+
+        '<div style="text-align:right"><div class="hist-price">'+fmt(h.offer)+'</div>'+
+          '<span class="hist-status '+spClass(h.status)+'" style="font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px">'+h.status+'</span></div>'+
+      '</div>';
+    });
+  }
+
+  document.getElementById('dc').innerHTML=
+    '<div class="dcov">'+cov+'</div>'+
+    '<div class="dtitle">'+(b.title||'Unknown')+'</div>'+
+    '<div class="dauthor">'+(b.author||'—')+'</div>'+
+    '<div class="drow"><span class="dlabel">Destination</span><span class="vbadge '+bdg+'">'+lbl+'</span></div>'+
+    '<div class="drow"><span class="dlabel">Buyback Offer</span><span class="dval">'+(b.offer?fmt(b.offer):'—')+'</span></div>'+
+    tbRow+
+    '<div class="drow"><span class="dlabel">Amazon Price</span><span class="dval">'+(b.amazon?fmt(b.amazon):'—')+'</span></div>'+
+    '<div class="drow"><span class="dlabel">eBay Net Est.</span><span class="dval">'+(b.ebay_net>0?fmt(b.ebay_net):'—')+'</span></div>'+
+    '<div class="drow"><span class="dlabel">Sales Rank</span><span class="dval" style="font-size:11px">'+rl+'</span></div>'+
+    '<div class="drow"><span class="dlabel">Binding</span><span class="dval" style="font-size:12px">'+(b.binding||'—')+'</span></div>'+
+    '<div class="drow" style="border:none"><span class="dlabel">ISBN</span><span class="isbn-chip">'+b.isbn+'</span></div>'+
+    // eBay sold comps button
+    '<a href="https://www.ebay.com/sch/i.html?_nkw='+encodeURIComponent(b.isbn)+'&_sacat=267&LH_Complete=1&LH_Sold=1" target="_blank" style="display:block;margin-top:10px;padding:11px 14px;border-radius:8px;background:var(--s2);border:1px solid var(--border);text-align:center;font-size:12px;font-weight:700;color:var(--text);text-decoration:none">🔍 View eBay Sold Listings</a>'+
+    '<a href="https://www.ebay.com/sch/i.html?_nkw='+encodeURIComponent((b.title||'').substring(0,40))+'&_sacat=267&LH_Complete=1&LH_Sold=1" target="_blank" style="display:block;margin-top:6px;padding:11px 14px;border-radius:8px;background:var(--s2);border:1px solid var(--border);text-align:center;font-size:12px;font-weight:700;color:var(--muted);text-decoration:none">🔍 Search by Title</a>'+
+    histHtml+allScansHtml+act;
+
+  document.getElementById('overlay').className='overlay open';
+  document.getElementById('drawer').className='drawer open';
+}
+function closeDrawer(){document.getElementById('overlay').className='overlay';document.getElementById('drawer').className='drawer';}
+
+var st2;
+document.getElementById('search').addEventListener('input',function(e){clearTimeout(st2);st2=setTimeout(function(){curSearch=e.target.value;renderBooks();},150);});
+var tsy=0;
+document.getElementById('drawer').addEventListener('touchstart',function(e){tsy=e.touches[0].clientY;},{passive:true});
+document.getElementById('drawer').addEventListener('touchend',function(e){if(e.changedTouches[0].clientY-tsy>60)closeDrawer();},{passive:true});
+
+loadHaulList();
+</script>
+</body>
+</html>
