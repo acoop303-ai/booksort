@@ -878,7 +878,13 @@ function loadBooksFromSheet(){
       catch(e) { throw new Error('Bad JSON from GAS — check deployment\n\n' + raw.substring(0,120)); }
       if(!d.ok) throw new Error('GAS returned error: ' + (d.error || JSON.stringify(d).substring(0,80)));
       if(!Array.isArray(d.rows)) throw new Error('GAS response missing rows array');
-      _all = d.rows.slice().reverse();
+      // one row per ISBN — Scan Log has a row per SCAN, keep only the newest
+      const _seen = new Set();
+      _all = d.rows.slice().reverse().filter(r => {
+        const i = String(r['ISBN']||'').trim();
+        if(!i || _seen.has(i)) return false;
+        _seen.add(i); return true;
+      });
       document.getElementById('src-lbl').textContent = 'v88 · sheet';
       hideMsg();
       buildPills();
